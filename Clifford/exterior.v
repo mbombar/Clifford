@@ -8,8 +8,6 @@ Require Import matrix mxalgebra tuple mxpoly zmodp binomial.
 From mathcomp
 Require Import perm finset path fingroup.
 
-
-
 (** **********************************************************************************
     *******************                                *******************************
     *******************    Beginning of exterior.v     *******************************
@@ -20,8 +18,7 @@ Require Import perm finset path fingroup.
 
 
 
-From mathcomp
-Require Import aux.
+From mathcomp Require Import aux.
 
 
 Set Implicit Arguments.
@@ -87,6 +84,7 @@ Definition perm_of_2seq :=
   (fun (T : eqType) n (si so : n.-tuple T) =>
   if (perm_eq si so =P true) isn't ReflectT ik then (1%g)
   else sval (sig_eqW (tuple_perm_eqP ik))).
+
 
 
 About sig_eqW.
@@ -207,6 +205,8 @@ Reference :  http://www.unige.ch/math/folks/ronga/lyse_II/2003-2004/chap_IV.pdf 
 Definition delta (i k : seq T) : R :=
   if (perm_eq i k) && (uniq i) then
   (-1) ^+ perm_of_2seq (insubd (in_tuple k) i) (in_tuple k) else 0.
+
+Locate in_tuple.
 
 
 (*
@@ -425,7 +425,47 @@ Locate nth.
 Lemma delta_perm n (i k : n.-tuple T) (σ : 'S_n) : 
   uniq k -> perm_eq i k -> delta [tuple (tnth i (σ x)) | x < n ] k = (-1)^+ σ * delta i k.
 Proof.
+
+
+move => uk pik.
+set τ := [tuple tnth i (σ x) | x < n].
+have pτi : perm_eq τ i by apply /tuple_perm_eqP; exists σ. 
+have pτk : perm_eq τ k by rewrite (perm_eq_trans pτi pik).
+have ui : uniq i by rewrite (perm_eq_uniq pik).
+have uτ : uniq τ by rewrite (perm_eq_uniq pτk).
+have sτk : size τ = size k by rewrite !size_tuple.
+have sik : size i = size k by rewrite !size_tuple.
+have sτi : size τ = size i by rewrite !size_tuple.
+have στi : σ = perm_of_2seq τ i by rewrite perm_of_2seq_perm.
+rewrite (@delta_comp τ i k uk pτi pik).
+congr ( _ * _).
+(* rewrite στi. *)
+
+(* rewrite deltaC.*) 
+rewrite /delta pτi uτ //=.
+(* rewrite στi. *)
+rewrite in_tupleE.
 Admitted.
+
+
+(*
+rewrite (@deltaE (size i)).
+rewrite pτi uτ //=.
+by [].
+
+rewrite στi.
+rewrite !(@deltaE (size k)).
+rewrite pτk uτ pik ui //=.
+rewrite -signr_addb.
+
+About odd_permM.
+About appP.
+
+ rewrite -odd_permM.
+rewrite perm_of_2seq_perm.
+rewrite -[in RHS]odd_permM. perm_of_2seq_comp.
+  About tuple_perm_eqP. *)
+
 
 (*
 move => uk pik.
@@ -516,7 +556,7 @@ Admitted.
 
 End delta.
 
-Section Exterior.
+Section Useful_Lemma.
 
 
 Lemma submx_add_cap (F : fieldType) (m1 m2 m3 n : nat)
@@ -536,54 +576,119 @@ elim/big_ind2: _; rewrite ?capmx0 => //=.
 by move=> ???? /addsmxS H /H /submx_trans -> //; apply: submx_add_cap.
 Qed. 
 
-Variable (F : fieldType) (n : nat).
+End Useful_Lemma.
 
-Let dim := #|{set 'I_n}|.
+Section Exterior.
 
 
+(*****************************************************************************)
+(****************************Type Definition**********************************)
+(*****************************************************************************)
 
-Definition exterior := 'rV[F]_dim.
+
+Section ExteriorDef.
+
+Variable (F : fieldType).
+Variable (n : nat).
+
+Let dim  := #|{set 'I_n}|.
+
+(*
+Inductive exterior : predArgType := Exterior of 'rV[F]_(dim n).
+Definition ext_val E := let: Exterior g := E in g.
+
+Canonical exterior_subType := Eval hnf in [newType for ext_val].
+*)
+
+Definition exterior := 'rV[F]_(dim).
 Canonical exterior_eqType := [eqType of exterior].
 Canonical exterior_choiceType := [choiceType of exterior].
 Canonical exterior_zmodType := [zmodType of exterior].
 
+(*
+Print Canonical Projections.
+*)
+
+Lemma mul1 (u : exterior) : 1 *: u = u.
+Admitted.
 
 
-
-
+(** A way to enumerate blades *)
 Definition exterior_enum (s : {set 'I_n}) : seq 'I_n :=
   sort (fun i j : 'I_n => (i <= j)%N) (enum s).
 
 
 
+
+Lemma exterior_enum_set0 : exterior_enum set0 = [::] :> seq 'I_n.
+Proof.
+  by rewrite /exterior_enum enum_set0.
+Qed.
+
+
+Lemma exterior_enum_uniq (S : {set 'I_n}) : uniq (exterior_enum S).
+Proof. by rewrite /exterior_enum sort_uniq enum_uniq. Qed.
+(*
+rewrite sorted_uniq.
+apply /card_uniqP.
+About sort.
+rewrite map_val_ord_enum.
+rewrite ord_enum_uniq.
+Search _ "uniq" "enum".
+About uniq.
+*)
+
+(** useful for non commutative product *)
 Definition sign (A B : {set 'I_n}) : F :=
   delta F (exterior_enum A ++ exterior_enum B) (exterior_enum (A :|: B)).
 
-Locate disjoint.
+ 
+
+Lemma sign0S1 (S : {set 'I_n}) : sign set0 S = 1.
+Proof.
+rewrite /sign set0U exterior_enum_set0 cat0s.
+by rewrite deltaii ?exterior_enum_uniq. 
+Qed.
+
+Lemma signS01 (S : {set 'I_n}) : sign S set0 = 1.
+Proof.
+rewrite /sign setU0 exterior_enum_set0 cats0.
+by rewrite deltaii ?exterior_enum_uniq.
+Qed.
+
+
+
 Lemma signND (A B : {set 'I_n}) : ~~ [disjoint A & B] -> sign A B = 0.
 Proof.
+move => ND.
+rewrite /sign.
+rewrite delta_0 //=.
+apply /orP.
 Admitted.
 
-Locate ":|:".
+Lemma signD (R S T : {set 'I_n}) : [disjoint R & S] -> sign (R :|: S) T = (sign R T)*(sign S T).
+Proof.
+move => dRS; rewrite /sign.
+Abort.
 
-
-
-(** basis vector *)
+(** basis vector of the exterior algebra *)
 Definition blade A : exterior := (delta_mx 0 (enum_rank A)).
 
 
-Definition mul_ext (u v : exterior) : exterior :=
-  \sum_(su : {set 'I_n})
-   \sum_(sv : {set 'I_n})
-   (u 0 (enum_rank su) * v 0 (enum_rank sv) * sign su sv) *: blade (su :|: sv).
+(*
+Variable r : nat.
+*)
 
 
-
-Local Notation "*w%F" := (@mul_ext _).
-Local Notation "u *w w" := (mul_ext u w) (at level 40).
-
+(** r-th exterior power *)
 Definition extn r : 'M[F]_dim :=
  (\sum_(s : {set 'I_n} | #|s| == r) <<blade s>>)%MS.
+
+
+(*
+Notation "'Λ_r" := (extn r) (only parsing): type_scope.
+*)
+
 
 Lemma dim_extn r : \rank (extn r) = 'C(n, r).
 Proof.
@@ -594,6 +699,7 @@ rewrite (eq_bigr (fun=> 1%N)); last first.
 by rewrite sum1dep_card card_draws card_ord.
 Qed.
 
+
 Lemma dim_exterior : \rank (1%:M : 'M[F]_dim) = (2 ^ n)%N.
 Proof.
 rewrite mxrank1 /dim (@eq_card _ _ (mem (powerset [set: 'I_n]))); last first.
@@ -602,6 +708,7 @@ by rewrite card_powerset cardsT card_ord.
 Qed.
 
 
+(** The exterior algebra is the direct sum of the i-th exterior power as modules *)
 
 Lemma mxdirect_extn : mxdirect (\sum_(i < n.+1) extn i).
 Proof.
@@ -615,8 +722,6 @@ by rewrite (@partition_big _ _ _ _ _ xpredT
 Qed.
 
 
-
-
 Lemma extnn : (\sum_(i < n.+1) extn i :=: 1%:M)%MS.
 Proof.
 apply/eqmxP; rewrite -mxrank_leqif_eq ?submx1 // dim_exterior /extn.
@@ -628,6 +733,50 @@ Qed.
 
 (* Lemma mul_extnV (u v : exterior) r s : (u <= extn r)%MS -> (v <= extn s)%MS -> *)
 (*   (u *w v)  = 0. *)
+
+
+
+(** Exterior algebra is indeed a Unital Algebra *)
+
+Print Canonical Projections.
+
+(** Firt : Ring structure *)
+Section ExteriorRing.
+
+
+(** For blades *)
+Definition mul_blade (R S : {set 'I_n}) : exterior := sign R S *: blade (R :|: S).
+Local Notation "*b%F" := (@mul_blade _).
+Local Notation "R *b S" := (mul_blade R S) (at level 40).
+
+Definition id_ext : exterior := blade set0. 
+
+
+
+(** id_ext is an identity element *)
+Lemma lmul_blade_1 (S : {set 'I_n}) : S *b set0 = blade S.
+Proof.
+by rewrite /mul_blade setU0 signS01 mul1. Qed.
+
+
+Lemma rmul_blade_1 (S : {set 'I_n}) : set0 *b S  = blade S.
+Proof.
+by rewrite /mul_blade set0U sign0S1 mul1. Qed.
+
+
+
+
+Definition mul_ext (u v : exterior) : exterior :=
+  \sum_(su : {set 'I_n})
+   \sum_(sv : {set 'I_n})
+   (u 0 (enum_rank su) * v 0 (enum_rank sv) * sign su sv) *: blade (su :|: sv).
+
+
+
+
+Local Notation "*w%F" := (@mul_ext _).
+Local Notation "u *w w" := (mul_ext u w) (at level 40).
+
 
 
 Lemma mul_extE (u v : exterior) (A : {set 'I_n}) :
@@ -654,7 +803,50 @@ apply: contraNneq svNADsu => /enum_rank_inj ->.
 by rewrite setDUl setDv set0U (setDidPl _) // disjoint_sym.
 Qed.
 
-Definition id_ext : exterior := blade set0. 
+
+
+
+
+(** Exterior product is associative *)
+Lemma mul_extA (u v w : exterior) : u *w (v *w w) = u *w v *w w.
+Proof.
+apply/rowP => i.
+rewrite -(enum_valK i).
+set A := enum_val i.
+rewrite !mul_extE.
+(* rewrite (enum_val_nth i).
+ rewrite enum_valP.*)
+(*
+Search _  "enum_val".
+
+About enum.
+apply enum_val.
+*)
+Abort.
+
+
+(*
+Definition exterior_ringmixin :=
+  RingMixin (@
+*)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+End ExteriorRing.
+
+
 
 Delimit Scope ext_scope with ext.
 Local Open Scope ext_scope.
@@ -671,12 +863,79 @@ Local Notation "\prod_ ( i < n ) B" :=
 Local Notation "\prod_ ( i <- r ) B" :=
   (\big[mul_ext/id_ext]_(i <- r) B%ext) : ext_scope.
 
-Definition to_ext (x : 'rV_n) : exterior := 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Definition to_ext (x : 'rV_n) : exterior :=
   \sum_(i : 'I_n) (x 0 i) *: blade [set i].
+
+(** Add something to have a natural cast 'rV_n --> exterior *)
+
+(** Add a lemma stating that x is zero iff each of its components is zero, must be in matrice/mxalgebra library. *)
+
+(* ssraglg -> axioms of algebra 
+Mixin, canonical etc
+*)
 
 (* Lemma to_ext1 (u : 'rV_n) : (to_ext u <= extn 1%N)%MS. *)
 
+
+
+(** June 16th *)
+Lemma mul_extA (u v w : exterior) : u *w (v *w w) = (u *w v) *w w.
+Proof.
+Admitted.
+
+Lemma mul_extD (u v w : exterior) : u *w (v + w) = u *w v + u *w w.
+Proof.
+Admitted.
+
+
+(* v ^+ 2 = 0 *)
+Lemma mul_ext0 (v : exterior) : ( v *w  v) = 0.
+Proof.
+Admitted.
+
+Lemma mul_extC (u v : exterior) : u *w v = - v *w u. 
+Proof.
+Admitted.
+
+(*
+
+(** Linearity *)
+Lemma mul_extL (α : F) (u v : exterior) : (α * u) *w v = α * (u *w v).
+*)
+
+(** Universal Property ? *)
+
+
+End Exterior.
+
+
+Section Form.
+
 Definition form_of r := 'M[F]_(r,n) -> F.
+
 
 
 
@@ -689,18 +948,14 @@ Definition form_of_ext r (u : exterior) : r.-form := fun v =>
   \sum_(s : {set 'I_n} | #|s| == r)
      u 0 (enum_rank s) * (\prod_i to_ext (row i v))%ext 0 (enum_rank s).
 
-Locate to_ext.
-About to_ext.
 
-
-Locate prod_i.
-
-
+(* Exterior product of two alternating form *)
 Definition mul_form r s (a : r.-form) (b : s.-form) : (r + s).-form := 
   fun v => ((r + s)`!)%:R^-1 * \sum_(sigma : 'S_(r + s))
             (- 1) ^ sigma *
                     a (\matrix_(i < r) row (sigma (unsplit (inl i))) v) * 
                     b (\matrix_(i < s) row (sigma (unsplit (inr i))) v).
+
 
 (*Definition exterior_enum (s : {set 'I_n}) : seq 'I_n :=
   sort (fun i j : 'I_n => i <= j) (enum s).*)
@@ -727,6 +982,11 @@ Definition alternate r (f : r.-form) :=
 
 Definition multilinear_alternate r (f : r.-form) :=
   multilinear f /\ alternate f.
+
+
+(* Lemma, the set of all alternating multilinear forms is a  vector space (as the sum of two such maps or the product with a scalar is again alternating *)
+
+
 
 Lemma ext_of_formK r (f : r.-form) : multilinear_alternate f -> 
   form_of_ext (ext_of_form f) =1 f.
@@ -759,6 +1019,12 @@ Abort.
 (*   k0 f v. *)
 
 
-  
 
-End Exterior.
+
+End Form.
+
+
+
+(* Section Duality *)
+
+(* End Duality *)
