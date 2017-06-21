@@ -610,7 +610,7 @@ Canonical exterior_zmodType := [zmodType of exterior].
 Print Canonical Projections.
 *)
 
-Lemma mul1x (u : exterior) : 1 *: u = u.
+Lemma mul1 (u : exterior) : 1 *: u = u.
 Proof. by rewrite scale1r. Qed.
 
 (** A way to enumerate blades *)
@@ -635,11 +635,10 @@ Search _ "uniq" "enum".
 About uniq.
 *)
 
+
 (** useful for non commutative product *)
 Definition sign (A B : {set 'I_n}) : F :=
   delta F (exterior_enum A ++ exterior_enum B) (exterior_enum (A :|: B)).
-
- 
 
 Lemma sign0S1 (S : {set 'I_n}) : sign set0 S = 1.
 Proof.
@@ -663,13 +662,293 @@ rewrite delta_0 //=.
 apply /orP.
 Admitted.
 
-Lemma signD (R S T : {set 'I_n}) : [disjoint R & S] -> sign (R :|: S) T = (sign R T)*(sign S T).
+
+
+Lemma signD_mul (R S T : {set 'I_n}) : [disjoint R & S] -> sign (R :|: S) T = (sign R T)*(sign S T).
 Proof.
 move => dRS; rewrite /sign.
 Abort.
 
+
+
 (** basis vector of the exterior algebra *)
 Definition blade A : exterior := (delta_mx 0 (enum_rank A)).
+
+
+
+
+Lemma blade_eq (A B : {set 'I_n}) : B = A -> (blade A) 0 (enum_rank B) = 1.
+Proof.
+move => eqAB.
+rewrite /blade/delta_mx mxE //=.
+have eqrank : enum_rank B == enum_rank A.
+apply /eqP.
+rewrite (@f_equal _ _ _ _ A) //=.
+by rewrite eqrank.
+Qed.
+
+
+Lemma blade_diff (A B : {set 'I_n}) : B != A -> (blade A) 0 (enum_rank B) = 0.
+Proof.
+move => BnA.
+rewrite /blade /delta_mx mxE //=.
+have NeqAB : ~~ (enum_rank B == enum_rank A). 
+move : BnA.
+apply /implyP.
+rewrite implybNN.
+apply /implyP.
+Admitted.
+
+(** Exterior algebra is indeed a Unital Algebra *)
+
+Print Canonical Projections.
+
+(** Firt : Ring structure *)
+Section ExteriorRing.
+
+
+(** For blades *)
+Definition mul_blade (R S : {set 'I_n}) : exterior := sign R S *: blade (R :|: S).
+Local Notation "*b%F" := (@mul_blade _).
+Local Notation "R *b S" := (mul_blade R S) (at level 40).
+
+Definition id_ext : exterior := blade set0. 
+
+
+
+(** id_ext is an identity element *)
+Lemma lmul_blade_1 (S : {set 'I_n}) : S *b set0 = blade S.
+Proof.
+by rewrite /mul_blade setU0 signS01 mul1. Qed.
+
+
+Lemma rmul_blade_1 (S : {set 'I_n}) : set0 *b S  = blade S.
+Proof.
+by rewrite /mul_blade set0U sign0S1 mul1. Qed.
+
+Definition mul_ext (u v : exterior) : exterior :=
+  \sum_(su : {set 'I_n})
+   \sum_(sv : {set 'I_n})
+   (u 0 (enum_rank su) * v 0 (enum_rank sv) * sign su sv) *: blade (su :|: sv).
+
+
+Local Notation "*w%F" := (@mul_ext _).
+Local Notation "u *w w" := (mul_ext u w) (at level 40).
+
+
+
+Lemma mul_extE (u v : exterior) (A : {set 'I_n}) :
+  (u *w v) 0 (enum_rank A) = 
+  \sum_(s in powerset A)
+   (u 0 (enum_rank s) * v 0 (enum_rank (A :\: s)) * sign s (A :\: s)).
+Proof.
+have bm := (@big_morph _ _ (fun M : 'M__ => M 0 _) 0 +%R) ; move=> [:mid mop].
+rewrite [LHS]bm; last first.
+- by abstract: mid; rewrite mxE.
+- by abstract: mop; move=> ??; rewrite mxE.
+rewrite (bigID (mem (powerset A))) /=.
+rewrite [X in _ + X]big1 ?addr0 /=; last first.
+  move=> su; rewrite inE => NsuA.
+  rewrite bm ?big1 => // sv _; rewrite !mxE /= [_ == _]negbTE ?mulr0 //.
+  by apply: contraNneq NsuA => /enum_rank_inj ->; rewrite subsetUl.
+apply: eq_bigr => su suA; rewrite bm // (bigD1 (A :\: su)) //= big1 ?addr0.
+  rewrite setDE setUIr -setDE setUCr setIT (setUidPr _) -?powersetE //.
+  by rewrite !mxE ?eqxx ?mulr1.
+move=> sv svNADsu; rewrite !mxE /=.
+have [duv|Nduv]:= boolP [disjoint su & sv]; last first.
+  by rewrite signND ?(mulr0,mul0r).
+rewrite [_ == _]negbTE ?mulr0 //.
+apply: contraNneq svNADsu => /enum_rank_inj ->.
+by rewrite setDUl setDv set0U (setDidPl _) // disjoint_sym.
+Qed.
+
+
+
+
+(** id_ext is indeed an identity element *)
+Lemma mul_ext1x : left_id id_ext mul_ext.
+Proof.
+move=> u; apply /rowP => i; rewrite -(enum_valK i).
+set A := enum_val i.
+rewrite mul_extE.  
+rewrite (bigD1 (set0)) //=; last first.
+  - by rewrite powersetE sub0set.
+rewrite big1 => [|s sneq0]; last first.
+  - rewrite blade_diff ?mul0r //=.
+    by move : sneq0; case : (s \in powerset A).
+rewrite blade_eq //=.
+by rewrite sign0S1 setD0 mulr1 mul1r addr0.
+Qed.
+
+
+
+Lemma mul_extx1 : right_id id_ext mul_ext.
+Proof.
+move=> u; apply /rowP => i; rewrite -(enum_valK i).
+set A := enum_val i.
+rewrite mul_extE.  
+rewrite (bigD1 (A)) //=;  last first.
+ - by rewrite powersetE.
+rewrite big1 => [|s spropA].
+rewrite blade_eq; last first.
+ -  by rewrite setDv.
+by rewrite setDv addr0 signS01 ?mulr1.
+rewrite blade_diff. 
+by rewrite mulrAC mulr0.
+
+rewrite setD_eq0.
+
+
+
+
+(*
+
+
+
+
+
+
+rewrite subEproper.
+apply /norP.
+have sneqA : s != A.
+move : spropA.
+by case : (s\in powerset A).
+have Aneqs : A != s.
+move : sneqA.
+by rewrite eq_sym.
+rewrite //=.
+
+
+
+have sneqA : s != A.
+move : spropA.
+by case : (s\in powerset A).
+have Aneqs : A != s.
+move : sneqA.
+by rewrite eq_sym.
+move : Aneqs.
+rewrite eqEsubset.
+case : (A \subset s); last first.
+ - by [].
+rewrite //=.
+have SsubA : s \subset A.
+move : spropA.
+rewrite andbC powersetE.
+case : (s \subset A).
+ - by [].
+ - by rewrite andbF.
+have NnSsubA : ~~ ~~ (s \subset A).
+move : SsubA.
+rewrite (@negbTE (~~ (s \subset A))).
+Search _ (_ -> ~~ _ -> _).
+
+(* 
+rewrite contraT.
+rewrite powersetE andbC -properEneq.
+rewrite //=.
+rewrite eqEsubset.
+rewrite negb_and.
+case : (s \subset A).
+rewrite //=.
+About proj2.
+rewrite negb_and.
+Search _ (_ || _ -> _).
+apply /nandP.
+rewrite powersetE andbC -properEneq.
+move=> spropA.
+apply/set0Pn. 
+apply /setDP.
+
+rewrite proper_card.
+apply /properP.
+move : sneqA. case : (s \in powerset A).
+rewrite //=.
+
+(* Qed.
+*)*)
+*)
+Admitted.
+
+
+(** Exterior product is associative *)
+Lemma mul_extA (u v w : exterior) : u *w (v *w w) = u *w v *w w.
+Proof.
+apply/rowP => i.
+rewrite -(enum_valK i).
+set A := enum_val i.
+rewrite !mul_extE.
+(* rewrite (enum_val_nth i).
+ rewrite enum_valP.*)
+(*
+Search _  "enum_val".
+
+About enum.
+apply enum_val.
+*)
+Abort.
+
+
+(** Left Distributivity *)
+Lemma mul_extDl (u v w : exterior) : (u + v)*w w = u *w w + v *w w.
+Proof.
+Admitted.
+
+(** Right Distributivity *)
+Lemma mul_extDr (u v w : exterior) : u*w (v + w) = u *w v + u *w w.
+Proof.
+Admitted.
+
+
+Definition to_ext (x : 'rV_n) : exterior :=
+  \sum_(i : 'I_n) (x 0 i) *: blade [set i].
+
+
+(** Non trivial ring *)
+Lemma ext_nonzero1 : id_ext != to_ext 0.
+Proof.
+Admitted.
+
+Definition exterior_ringMixin :=
+  RingMixin (mul_extA) (mul_ext1x) (mul_extx1) 
+            (mul_extDl) (mul_extDr) (ext_nonzero1).
+
+Canonical exterior_ringType := Eval hnf in RingType exterior exterior_ringMixin.
+
+
+(*
+Definition exterior_ringmixin :=
+  RingMixin (@
+*)
+
+
+
+Delimit Scope ext_scope with ext.
+Local Open Scope ext_scope.
+Local Notation "\prod_ ( i | P ) B" :=
+  (\big[mul_ext/id_ext]_(i | P) B%ext) : ext_scope.
+Local Notation "\prod_ ( i < n | P ) B" :=
+  (\big[mul_ext/id_ext]_(i < n | P) B%ext) : ext_scope.
+Local Notation "\prod_ ( i <- r | P ) B" :=
+  (\big[mul_ext/id_ext]_(i <- r | P) B%ext) : ext_scope.
+Local Notation "\prod_ i B" :=
+  (\big[mul_ext/id_ext]_i B%ext) : ext_scope.
+Local Notation "\prod_ ( i < n ) B" :=
+  (\big[mul_ext/id_ext]_(i < n) B%ext) : ext_scope.
+Local Notation "\prod_ ( i <- r ) B" :=
+  (\big[mul_ext/id_ext]_(i <- r) B%ext) : ext_scope.
+
+
+
+
+
+
+
+End ExteriorRing.
+
+
+
+
+
 
 
 (*
@@ -733,158 +1012,25 @@ Qed.
 
 
 
-(** Exterior algebra is indeed a Unital Algebra *)
 
-Print Canonical Projections.
 
-(** Firt : Ring structure *)
-Section ExteriorRing.
 
 
-(** For blades *)
-Definition mul_blade (R S : {set 'I_n}) : exterior := sign R S *: blade (R :|: S).
-Local Notation "*b%F" := (@mul_blade _).
-Local Notation "R *b S" := (mul_blade R S) (at level 40).
 
-Definition id_ext : exterior := blade set0. 
 
 
 
-(** id_ext is an identity element *)
-Lemma lmul_blade_1 (S : {set 'I_n}) : S *b set0 = blade S.
-Proof.
-by rewrite /mul_blade setU0 signS01 mul1. Qed.
 
 
-Lemma rmul_blade_1 (S : {set 'I_n}) : set0 *b S  = blade S.
-Proof.
-by rewrite /mul_blade set0U sign0S1 mul1. Qed.
 
 
 
 
-Definition mul_ext (u v : exterior) : exterior :=
-  \sum_(su : {set 'I_n})
-   \sum_(sv : {set 'I_n})
-   (u 0 (enum_rank su) * v 0 (enum_rank sv) * sign su sv) *: blade (su :|: sv).
 
 
 
 
-Local Notation "*w%F" := (@mul_ext _).
-Local Notation "u *w w" := (mul_ext u w) (at level 40).
 
-
-
-Lemma mul_extE (u v : exterior) (A : {set 'I_n}) :
-  (u *w v) 0 (enum_rank A) = 
-  \sum_(s in powerset A)
-   (u 0 (enum_rank s) * v 0 (enum_rank (A :\: s)) * sign s (A :\: s)).
-Proof.
-have bm := (@big_morph _ _ (fun M : 'M__ => M 0 _) 0 +%R); move=> [:mid mop].
-rewrite [LHS]bm; last first.
-- by abstract: mid; rewrite mxE.
-- by abstract: mop; move=> ??; rewrite mxE.
-rewrite (bigID (mem (powerset A))) /= [X in _ + X]big1 ?addr0 /=; last first.
-  move=> su; rewrite inE => NsuA.
-  rewrite bm ?big1 => // sv _; rewrite !mxE /= [_ == _]negbTE ?mulr0 //.
-  by apply: contraNneq NsuA => /enum_rank_inj ->; rewrite subsetUl.
-apply: eq_bigr => su suA; rewrite bm // (bigD1 (A :\: su)) //= big1 ?addr0.
-  rewrite setDE setUIr -setDE setUCr setIT (setUidPr _) -?powersetE //.
-  by rewrite !mxE ?eqxx ?mulr1.
-move=> sv svNADsu; rewrite !mxE /=.
-have [duv|Nduv]:= boolP [disjoint su & sv]; last first.
-  by rewrite signND ?(mulr0,mul0r).
-rewrite [_ == _]negbTE ?mulr0 //.
-apply: contraNneq svNADsu => /enum_rank_inj ->.
-by rewrite setDUl setDv set0U (setDidPl _) // disjoint_sym.
-Qed.
-
-
-
-
-
-(** Exterior product is associative *)
-Lemma mul_extA (u v w : exterior) : u *w (v *w w) = u *w v *w w.
-Proof.
-apply/rowP => i.
-rewrite -(enum_valK i).
-set A := enum_val i.
-rewrite !mul_extE.
-(* rewrite (enum_val_nth i).
- rewrite enum_valP.*)
-(*
-Search _  "enum_val".
-
-About enum.
-apply enum_val.
-*)
-Abort.
-
-
-(*
-Definition exterior_ringmixin :=
-  RingMixin (@
-*)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-End ExteriorRing.
-
-
-
-Delimit Scope ext_scope with ext.
-Local Open Scope ext_scope.
-Local Notation "\prod_ ( i | P ) B" :=
-  (\big[mul_ext/id_ext]_(i | P) B%ext) : ext_scope.
-Local Notation "\prod_ ( i < n | P ) B" :=
-  (\big[mul_ext/id_ext]_(i < n | P) B%ext) : ext_scope.
-Local Notation "\prod_ ( i <- r | P ) B" :=
-  (\big[mul_ext/id_ext]_(i <- r | P) B%ext) : ext_scope.
-Local Notation "\prod_ i B" :=
-  (\big[mul_ext/id_ext]_i B%ext) : ext_scope.
-Local Notation "\prod_ ( i < n ) B" :=
-  (\big[mul_ext/id_ext]_(i < n) B%ext) : ext_scope.
-Local Notation "\prod_ ( i <- r ) B" :=
-  (\big[mul_ext/id_ext]_(i <- r) B%ext) : ext_scope.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Definition to_ext (x : 'rV_n) : exterior :=
-  \sum_(i : 'I_n) (x 0 i) *: blade [set i].
 
 (** Add something to have a natural cast 'rV_n --> exterior *)
 
