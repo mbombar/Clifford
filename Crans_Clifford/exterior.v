@@ -601,14 +601,14 @@ Canonical exterior_subType := Eval hnf in [newType for ext_val].
 *)
 
 Definition exterior := 'rV[F]_(dim).
+
 Canonical exterior_eqType := [eqType of exterior].
 Canonical exterior_choiceType := [choiceType of exterior].
 Canonical exterior_zmodType := [zmodType of exterior].
-(* Canonical exterior_RmodType := [
-*)
-(*
-Print Canonical Projections.
-*)
+
+
+
+Section ExteriorAlgebra.
 
 Lemma mul1 (u : exterior) : 1 *: u = u.
 Proof. by rewrite scale1r. Qed.
@@ -675,6 +675,12 @@ Abort.
 Definition blade A : exterior := (delta_mx 0 (enum_rank A)).
 
 
+Definition to_ext (x : 'rV_n) : exterior :=
+  \sum_(i : 'I_n) (x 0 i) *: blade [set i].
+
+Local Notation "x %:ext" := (to_ext x) (at level 40).
+
+
 
 
 Lemma blade_eq (A B : {set 'I_n}) : B = A -> (blade A) 0 (enum_rank B) = 1.
@@ -704,8 +710,6 @@ Admitted.
 Print Canonical Projections.
 
 (** Firt : Ring structure *)
-Section ExteriorRing.
-
 
 (** For blades *)
 Definition mul_blade (R S : {set 'I_n}) : exterior := sign R S *: blade (R :|: S).
@@ -796,20 +800,56 @@ by rewrite setDv addr0 signS01 ?mulr1.
 rewrite blade_diff. 
 by rewrite mulrAC mulr0.
 
-rewrite setD_eq0.
+have sneqA : s != A.
+move : spropA.
+by case : (s\in powerset A).
+have Aneqs : A != s.
+move : sneqA.
+by rewrite eq_sym.
 
+rewrite setD_eq0.
+rewrite subEproper.
+apply /norP.
+move : spropA => /andP[SsubsetA sneqA2].
+rewrite eq_sym.
+suff AnpropS : ~~ (A \proper s).
+ - by move : sneqA AnpropS.
+Search _ ( ~~ ( _ \proper _) ).
+rewrite properE.
+apply /nandP.
+
+Check (s \subset A).
+case (s \subset A).
+rewrite //=.
+apply /orP.
+by rewrite orbT.
+rewrite //=.
+apply /orP.
+rewrite orbF.
 
 
 
 (*
+move : sneqA.
+rewrite eqEsubset.
+rewrite negb_and.
+case (s \subset A).
+rewrite //=.
+rewrite //=.
+move : Aneqs.
+rewrite eqEsubset negb_and.
+*)
 
 
+(*
+rewrite (@negbNE (s \subset A)) //=.
+move : SsubsetA.
+rewrite powersetE //=.
 
 
+move => /andP [A B].
 
 
-rewrite subEproper.
-apply /norP.
 have sneqA : s != A.
 move : spropA.
 by case : (s\in powerset A).
@@ -870,6 +910,39 @@ rewrite //=.
 Admitted.
 
 
+
+
+
+
+(** Blade product is a particular case of wedge product of two exterior *)
+Lemma mul_blade_ext (R S : {set 'I_n}) : R *b S = blade R *w blade S.
+Proof.
+rewrite /mul_blade /mul_ext.
+rewrite (bigD1 R) //= addrC.
+rewrite big1 => [|T TneqR]; last first.
+  - rewrite blade_diff.
+    apply /rowP => i.
+    rewrite //=.
+Admitted.
+
+
+
+
+(** Homogeneity of wedge product *)
+Lemma mul_extHomBlade (R S : {set 'I_n}) (k : F) : (k *: blade R) *w (blade S) = k *: (blade R *w blade S).
+Admitted.
+
+
+Lemma mul_extHom (k : F) (u v : exterior) : k *: (u *w v) = (k *: u) *w v.
+Admitted.
+
+
+
+
+
+
+
+
 (** Exterior product is associative *)
 Lemma mul_extA (u v w : exterior) : u *w (v *w w) = u *w v *w w.
 Proof.
@@ -885,7 +958,7 @@ Search _  "enum_val".
 About enum.
 apply enum_val.
 *)
-Abort.
+Admitted.
 
 
 (** Left Distributivity *)
@@ -899,28 +972,27 @@ Proof.
 Admitted.
 
 
-Definition to_ext (x : 'rV_n) : exterior :=
-  \sum_(i : 'I_n) (x 0 i) *: blade [set i].
-
+Section ExteriorRing.
 
 (** Non trivial ring *)
-Lemma ext_nonzero1 : id_ext != to_ext 0.
+Lemma ext_nonzero1 : id_ext != 0 :> exterior.
 Proof.
 Admitted.
+
+
 
 Definition exterior_ringMixin :=
   RingMixin (mul_extA) (mul_ext1x) (mul_extx1) 
             (mul_extDl) (mul_extDr) (ext_nonzero1).
 
 Canonical exterior_ringType := Eval hnf in RingType exterior exterior_ringMixin.
+Canonical matrix_lAlgType := Eval hnf in LalgType F exterior (mul_extHom).
 
 
-(*
-Definition exterior_ringmixin :=
-  RingMixin (@
-*)
+Lemma mulextE : mul_ext = *%R. Proof. by []. Qed.
+Lemma id_extE : id_ext = 1. Proof. by []. Qed.
 
-
+End ExteriorRing. 
 
 Delimit Scope ext_scope with ext.
 Local Open Scope ext_scope.
@@ -939,11 +1011,15 @@ Local Notation "\prod_ ( i <- r ) B" :=
 
 
 
+Lemma mulxx0 (x : exterior) : x ^+ 2 = 0.
+Proof.
+Admitted.
 
 
 
 
-End ExteriorRing.
+
+End ExteriorAlgebra.
 
 
 
