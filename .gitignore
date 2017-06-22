@@ -1,0 +1,7 @@
+#Le Dossier qui contient des bouquins
+/Doc
+
+#Les fichiers générés par le Makefile ou par emacs
+*~
+*.aux
+*.vo
