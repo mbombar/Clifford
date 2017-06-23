@@ -696,14 +696,16 @@ Qed.
 
 Lemma blade_diff (A B : {set 'I_n}) : B != A -> (blade A) 0 (enum_rank B) = 0.
 Proof.
-move => BnA.
-rewrite /blade /delta_mx mxE //=.
-have NeqAB : ~~ (enum_rank B == enum_rank A). 
-move : BnA.
-apply /implyP.
-rewrite implybNN.
-apply /implyP.
-Admitted.
+move => BnA; rewrite /blade /delta_mx mxE //=.
+have NeqAB : (enum_rank B == enum_rank A) = false; last first.
+ -  by  rewrite NeqAB.
+apply negbTE; rewrite eq_sym.
+move : BnA; rewrite eq_sym.
+move : (@enum_rank_inj _ (A) (B)). 
+by apply contra_neq.
+Qed.
+
+
 
 (** Exterior algebra is indeed a Unital Algebra *)
 
