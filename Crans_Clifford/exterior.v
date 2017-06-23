@@ -610,7 +610,9 @@ Canonical exterior_zmodType := [zmodType of exterior].
 
 Section ExteriorAlgebra.
 
-Lemma mul1 (u : exterior) : 1 *: u = u.
+
+
+Lemma scale1ext (u : exterior) : 1 *: u = u.
 Proof. by rewrite scale1r. Qed.
 
 (** A way to enumerate blades *)
@@ -654,14 +656,35 @@ Qed.
 
 
 
-Lemma signND (A B : {set 'I_n}) : ~~ [disjoint A & B] -> sign A B = 0.
+(** Idea : ~~[disjoint A & B] = ~~ (uniq ( exterior_enum A ++ exterior_enum B ) ) *)
+
+
+
+Lemma disjoint_seq (A B : {set 'I_n}) :
+  [disjoint A & B] = [disjoint (enum A) & (enum B)].
 Proof.
-move => ND.
-rewrite /sign.
-rewrite delta_0 //=.
-apply /orP.
 Admitted.
 
+
+
+
+Lemma exterior_enum_disjoint (A B : {set 'I_n}) :  
+    [disjoint A & B] = uniq ( exterior_enum A ++ exterior_enum B).
+Proof.
+rewrite cat_uniq !exterior_enum_uniq //=.
+Search _ "disjoint" "has".
+rewrite disjoint_seq disjoint_has.
+rewrite /exterior_enum //=.
+Search _ "mem" "sort".
+(* rewrite mem_sort. *)
+Admitted.
+
+
+Lemma signND (A B : {set 'I_n}) : ~~ [disjoint A & B] -> sign A B = 0.
+Proof.
+rewrite exterior_enum_disjoint => ND.
+by rewrite /sign delta_0 //= ND.
+Qed.
 
 
 Lemma signD_mul (R S T : {set 'I_n}) : [disjoint R & S] -> sign (R :|: S) T = (sign R T)*(sign S T).
@@ -670,6 +693,57 @@ move => dRS; rewrite /sign.
 Abort.
 
 
+
+
+
+Lemma signii (i : 'I_n) : sign [set i] [set i] = 0.
+Proof. 
+by rewrite signND //= -setI_eq0 setIid; apply /set0Pn; exists i; rewrite set11.
+Qed.
+
+
+Lemma sign_single (i j : 'I_n) : i != j -> sign [set j] [set i] = - sign [set i] [set j].
+Proof.
+
+move => ineqj.
+
+rewrite /sign /exterior_enum !enum_set1 setUC. 
+rewrite delta_catC.
+by rewrite !size_sort muln1 expr1 mulN1r.
+
+by rewrite sort_uniq enum_uniq.
+
+Search _ "sort".
+
+
+have sortaa a : sort (fun i0 j0 : 'I_n => i0 <= j0) [:: a] = [:: a]. by [].
+
+rewrite !sortaa //=.
+rewrite perm_eq_sym perm_sort.
+
+Search _ (enum [set _]).
+(*
+(* apply /perm_eqP.
+
+apply perm_eq_refl. *)
+
+
+have enum_set2 : enum [set i; j] = enum [:: i; j].
+
+Search _ "enum".
+
+
+rewrite (eq_enum (in_set _)).
+
+Search _ (perm_eq _ ( enum _) ).
+
+
+apply sort_sorted.
+rewrite eq_sorted.
+rewrite perm_sort.
+Search _ "perm" "sort".
+*)
+Admitted.
 
 (** basis vector of the exterior algebra *)
 Definition blade A : exterior := (delta_mx 0 (enum_rank A)).
@@ -680,6 +754,11 @@ Definition to_ext (x : 'rV_n) : exterior :=
 
 Local Notation "x %:ext" := (to_ext x) (at level 40).
 
+Lemma to_ext_add (x y : 'rV_n) : (x %:ext) + (y %:ext) = (x + y)%:ext.
+Proof.
+rewrite /to_ext -big_split //=.
+(* rewrite -scalerDr.*)
+Admitted.
 
 
 
@@ -722,11 +801,14 @@ Definition id_ext : exterior := blade set0.
 (** id_ext is an identity element *)
 Lemma lmul_blade_1 (S : {set 'I_n}) : S *b set0 = blade S.
 Proof.
-by rewrite /mul_blade setU0 signS01 mul1. Qed.
+by rewrite /mul_blade setU0 signS01 scale1ext. Qed.
 
 Lemma rmul_blade_1 (S : {set 'I_n}) : set0 *b S  = blade S.
 Proof.
-by rewrite /mul_blade set0U sign0S1 mul1. Qed.
+by rewrite /mul_blade set0U sign0S1 scale1ext. Qed.
+
+
+
 
 
 (** A definition of wedge product *)
@@ -928,6 +1010,7 @@ Admitted.
 
 
 
+
 (** Blade product is a particular case of wedge product of two exterior *)
 Lemma mul_blade_ext (R S : {set 'I_n}) : R *b S = blade R *w blade S.
 Proof.
@@ -942,12 +1025,32 @@ Admitted.
 
 
 
-(** Homogeneity of wedge product *)
-Lemma mul_extHomBlade (R S : {set 'I_n}) (k : F) : (k *: blade R) *w (blade S) = k *: (blade R *w blade S).
+
+
+
+(*
+Lemma scaleextDl (u : exterior) x y : (x + y) *: u = x *: u + y *: u.
+Proof.
+Admitted.
+
+Lemma scaleextDr (u v : exterior)  x : x *: (u + v) = x *: u + x *: v.
+Admitted.
+
+Lemma scaleextA x y (u : exterior) : x *: (y *: u) = (x * y) *: u.
 Admitted.
 
 
-Lemma mul_extHom (k : F) (u v : exterior) : k *: (u *w v) = (k *: u) *w v.
+Definition exterior_lmodMixin :=
+  LmodMixin scaleextA scale1ext scaleextDr scaleextDr.
+*)
+
+
+(** Homogeneity of wedge product *)
+Lemma scale_mul_ext_blade (R S : {set 'I_n}) (k : F) : (k *: blade R) *w (blade S) = k *: (blade R *w blade S).
+Admitted.
+
+
+Lemma scaleextAl (k : F) (u v : exterior) : k *: (u *w v) = (k *: u) *w v.
 Admitted.
 
 
@@ -1000,7 +1103,7 @@ Definition exterior_ringMixin :=
             (mul_extDl) (mul_extDr) (ext_nonzero1).
 
 Canonical exterior_ringType := Eval hnf in RingType exterior exterior_ringMixin.
-Canonical matrix_lAlgType := Eval hnf in LalgType F exterior (mul_extHom).
+Canonical matrix_lAlgType := Eval hnf in LalgType F exterior (scaleextAl).
 
 
 Lemma mulextE : mul_ext = *%R. Proof. by []. Qed.
@@ -1025,13 +1128,41 @@ Local Notation "\prod_ ( i <- r ) B" :=
 
 
 
-Lemma mulxx0 (x : exterior) : x ^+ 2 = 0.
+
+
+
+
+Lemma scaleextAr a (u v : exterior) : a *: (u * v) = u * (a *: v).
 Proof.
 Admitted.
 
 
 
 
+
+
+(** Only true for vectors from the original vector space *)
+Lemma mulxx0 (x : 'rV_n) : (x %:ext) ^+ 2 = 0.
+Proof.
+rewrite /to_ext expr2.
+rewrite big_distrlr //=.
+
+(* rewrite -big_split_ord.*)
+(* rewrite big1_eq.  *)
+(* rewrite -scaleextAr. *)
+Search _ "sum" "eq0".
+
+Admitted.
+
+
+
+Lemma mul_extNC (x y : 'rV_n) : (to_ext x) * (to_ext y) = - (to_ext y) * (to_ext x).
+Proof.
+have sumsquare0 : ((x%:ext) + (y%:ext)) * ( (x%:ext) + (y%:ext)) = 0. 
+  by rewrite to_ext_add -expr2 mulxx0.
+move : sumsquare0.
+(* rewrite -expr2 [in LHS]sqrrD !mulxx0 addrK. Qed*)
+Admitted.
 
 End ExteriorAlgebra.
 
@@ -1134,24 +1265,6 @@ Mixin, canonical etc
 
 
 
-(** June 16th *)
-Lemma mul_extA (u v w : exterior) : u *w (v *w w) = (u *w v) *w w.
-Proof.
-Admitted.
-
-Lemma mul_extD (u v w : exterior) : u *w (v + w) = u *w v + u *w w.
-Proof.
-Admitted.
-
-
-(* v ^+ 2 = 0 *)
-Lemma mul_ext0 (v : exterior) : ( v *w  v) = 0.
-Proof.
-Admitted.
-
-Lemma mul_extC (u v : exterior) : u *w v = - v *w u. 
-Proof.
-Admitted.
 
 (*
 
@@ -1162,7 +1275,7 @@ Lemma mul_extL (α : F) (u v : exterior) : (α * u) *w v = α * (u *w v).
 (** Universal Property ? *)
 
 
-End Exterior.
+(* End ExteriorDef. *)
 
 
 Section Form.
@@ -1179,7 +1292,7 @@ Notation "r .-form" := (form_of r)
 (* ~ scalar product *)
 Definition form_of_ext r (u : exterior) : r.-form := fun v =>
   \sum_(s : {set 'I_n} | #|s| == r)
-     u 0 (enum_rank s) * (\prod_i to_ext (row i v))%ext 0 (enum_rank s).
+     u 0 (enum_rank s) * (\prod_i to_ext (row i v)) 0 (enum_rank s).
 
 
 (* Exterior product of two alternating form *)
@@ -1236,7 +1349,7 @@ Abort.
 
 Lemma mul_ext_form r s (f : r.-form) (g : s.-form) :
   multilinear_alternate f -> multilinear_alternate g -> 
-  ext_of_form (mul_form f g) = (ext_of_form f) *w (ext_of_form g).
+  ext_of_form (mul_form f g) = (ext_of_form f) * (ext_of_form g).
 Proof.
 Abort.
 
