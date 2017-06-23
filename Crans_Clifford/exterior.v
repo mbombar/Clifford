@@ -706,12 +706,11 @@ by apply contra_neq.
 Qed.
 
 
-
 (** Exterior algebra is indeed a Unital Algebra *)
 
 Print Canonical Projections.
 
-(** Firt : Ring structure *)
+(** First : Ring structure *)
 
 (** For blades *)
 Definition mul_blade (R S : {set 'I_n}) : exterior := sign R S *: blade (R :|: S).
@@ -720,23 +719,21 @@ Local Notation "R *b S" := (mul_blade R S) (at level 40).
 
 Definition id_ext : exterior := blade set0. 
 
-
-
 (** id_ext is an identity element *)
 Lemma lmul_blade_1 (S : {set 'I_n}) : S *b set0 = blade S.
 Proof.
 by rewrite /mul_blade setU0 signS01 mul1. Qed.
 
-
 Lemma rmul_blade_1 (S : {set 'I_n}) : set0 *b S  = blade S.
 Proof.
 by rewrite /mul_blade set0U sign0S1 mul1. Qed.
 
+
+(** A definition of wedge product *)
 Definition mul_ext (u v : exterior) : exterior :=
   \sum_(su : {set 'I_n})
    \sum_(sv : {set 'I_n})
    (u 0 (enum_rank su) * v 0 (enum_rank sv) * sign su sv) *: blade (su :|: sv).
-
 
 Local Notation "*w%F" := (@mul_ext _).
 Local Notation "u *w w" := (mul_ext u w) (at level 40).
@@ -770,7 +767,6 @@ Qed.
 
 
 
-
 (** id_ext is indeed an identity element *)
 Lemma mul_ext1x : left_id id_ext mul_ext.
 Proof.
@@ -792,24 +788,40 @@ Lemma mul_extx1 : right_id id_ext mul_ext.
 Proof.
 move=> u; apply /rowP => i; rewrite -(enum_valK i).
 set A := enum_val i.
-rewrite mul_extE.  
-rewrite (bigD1 (A)) //=;  last first.
- - by rewrite powersetE.
-rewrite big1 => [|s spropA].
-rewrite blade_eq; last first.
- -  by rewrite setDv.
+rewrite mul_extE (bigD1 (A)) //=;  last first. by rewrite powersetE.
+rewrite big1 => [|s spropA]; last first.
+  - have SsubA : s \subset A.
+       by move : spropA; rewrite andbC => /andP[ _]; rewrite powersetE.
+  - have ADSneq0 : A :\: s != set0.
+    by rewrite -card_gt0 cardsDS ?SsubA ?subn_gt0;
+      move : spropA; rewrite powersetE andbC -properEneq properEcard => /andP[_ card].
+  - rewrite blade_diff; last first. by rewrite ADSneq0.
+      by rewrite mulrAC mulr0.
+rewrite blade_eq; last first. by rewrite setDv.
 by rewrite setDv addr0 signS01 ?mulr1.
-rewrite blade_diff. 
-by rewrite mulrAC mulr0.
+Qed.
 
-have sneqA : s != A.
-move : spropA.
-by case : (s\in powerset A).
-have Aneqs : A != s.
-move : sneqA.
-by rewrite eq_sym.
+
+
+(*
+apply /set0Pn.
+apply: existsP.
+
+
+
+
+have cardge0 : #|A :\: s| > 0.
+rewrite cardsDS ?SsubA ?subn_gt0.
+
+Search _ (_ - _ > 0) .
+
+apply /setP => x.
+
+
 
 rewrite setD_eq0.
+
+
 rewrite subEproper.
 apply /norP.
 move : spropA => /andP[SsubsetA sneqA2].
@@ -910,7 +922,7 @@ rewrite //=.
 *)*)
 *)
 Admitted.
-
+*)
 
 
 
