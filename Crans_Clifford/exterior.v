@@ -701,7 +701,7 @@ have NeqAB : (enum_rank B == enum_rank A) = false; last first.
  -  by  rewrite NeqAB.
 apply negbTE; rewrite eq_sym.
 move : BnA; rewrite eq_sym.
-move : (@enum_rank_inj _ (A) (B)). 
+move : (@enum_rank_inj _ (A) (B)).
 by apply contra_neq.
 Qed.
 
