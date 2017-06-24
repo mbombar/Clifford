@@ -1043,16 +1043,17 @@ Lemma mul_blade_ext (R S : {set 'I_n}) : R *b S = blade R *w blade S.
 Proof.
 rewrite /mul_blade /mul_ext.
 rewrite (bigD1 R) //= addrC.
-case: (S == R).
-
 rewrite big1 => [|T TneqR]; last first.
-  - rewrite blade_diff.
-    apply /rowP => (enum_rank (T :| sv)); rewrite //=.
-
-
-
-Admitted.
-
+  - rewrite blade_diff ?TneqR //=.
+    rewrite (bigD1 S) //=.
+    rewrite big1 => [| U UneqS]; last first.
+      - by rewrite blade_diff ?UneqS ?mul0r ?scale0r.
+    by rewrite blade_eq ?mul0r ?scale0r ?addr0.
+rewrite add0r (bigD1 S) //=.
+rewrite big1 => [| U UneqS]; last first.
+ - by rewrite blade_eq ?blade_diff ?mul1r ?mul0r ?scale0r.
+by rewrite !blade_eq ?mul1r ?addr0.
+Qed.
 
 
 
