@@ -1111,14 +1111,24 @@ Admitted.
 
 
 (** Left Distributivity *)
-Lemma mul_extDl (u v w : exterior) : (u + v)*w w = u *w w + v *w w.
+Lemma mul_extDl : left_distributive mul_ext +%R.
 Proof.
-Admitted.
+move => u v w; apply /rowP => i; rewrite -(enum_valK i).
+set A := enum_val i.
+rewrite mxE !mul_extE -big_split //=.
+by apply : eq_bigr => s _; rewrite mxE !mulrDl.
+Qed.
+
+
 
 (** Right Distributivity *)
-Lemma mul_extDr (u v w : exterior) : u*w (v + w) = u *w v + u *w w.
+Lemma mul_extDr : right_distributive mul_ext +%R.
 Proof.
-Admitted.
+move => u v w; apply /rowP => i; rewrite -(enum_valK i).
+set A := enum_val i.
+rewrite mxE !mul_extE -big_split //=.
+by apply : eq_bigr => s _; rewrite mxE !mulrDr mulrDl.
+Qed.
 
 
 Section ExteriorRing.
@@ -1179,14 +1189,17 @@ Qed.
 (** Only true for vectors from the original vector space *)
 Lemma mulxx0 (x : 'rV_n) : (x %:ext) ^+ 2 = 0.
 Proof.
-rewrite /to_ext expr2.
+(* rewrite /to_ext expr2.
 rewrite big_distrlr //=.
-
+rewrite big1 //= => i _.
+rewrite big1 //= => j _.
+rewrite mulrA.
+rewrite scaleextAr.
 (* rewrite -big_split_ord.*)
 (* rewrite big1_eq.  *)
 (* rewrite -scaleextAr. *)
 Search _ "sum" "eq0".
-
+*)
 Admitted.
 
 
