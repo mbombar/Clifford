@@ -756,11 +756,8 @@ Local Notation "x %:ext" := (to_ext x) (at level 40).
 
 Lemma to_ext_add (x y : 'rV_n) : (x %:ext) + (y %:ext) = (x + y)%:ext.
 Proof.
-rewrite /to_ext -big_split //=.
-(* rewrite -scalerDr.*)
-Admitted.
-
-
+by rewrite /to_ext -big_split; apply : eq_bigr => i _; rewrite mxE scalerDl.
+Qed.
 
 Lemma blade_eq (A B : {set 'I_n}) : B = A -> (blade A) 0 (enum_rank B) = 1.
 Proof.
