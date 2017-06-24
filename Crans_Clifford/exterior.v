@@ -1054,9 +1054,7 @@ rewrite big1 => [| U UneqS]; last first.
  - by rewrite blade_eq ?blade_diff ?mul1r ?mul0r ?scale0r.
 by rewrite !blade_eq ?mul1r ?addr0.
 Qed.
-
-
-
+Hint Resolve mul_blade_ext.
 
 
 
@@ -1078,13 +1076,15 @@ Definition exterior_lmodMixin :=
 
 
 (** Homogeneity of wedge product *)
-Lemma scale_mul_ext_blade (R S : {set 'I_n}) (k : F) : (k *: blade R) *w (blade S) = k *: (blade R *w blade S).
-Admitted.
 
 
 Lemma scaleextAl (k : F) (u v : exterior) : k *: (u *w v) = (k *: u) *w v.
-Admitted.
-
+Proof.
+apply /rowP => i; rewrite -(enum_valK i).
+set A := enum_val i; rewrite mxE !mul_extE.
+rewrite big_distrr //=.
+by apply eq_bigr => S _; rewrite !mulrA mxE.
+Qed.
 
 
 
@@ -1161,12 +1161,15 @@ Local Notation "\prod_ ( i <- r ) B" :=
 
 
 
-
-
-
 Lemma scaleextAr a (u v : exterior) : a *: (u * v) = u * (a *: v).
 Proof.
-Admitted.
+apply /rowP => i; rewrite -(enum_valK i).
+set A := enum_val i; rewrite mxE !mul_extE.
+rewrite big_distrr //=.
+apply eq_bigr => S _.
+rewrite mxE !mulrA.
+by congr ( _ * _); congr (_ * _) ; rewrite mulrC.
+Qed.
 
 
 
