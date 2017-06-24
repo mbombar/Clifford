@@ -1007,6 +1007,33 @@ Admitted.
 *)
 
 
+(** 0 is 0 *)
+Lemma ext0 (A : {set 'I_n}) : (0 : exterior) 0 (enum_rank A) = 0.
+Proof. by rewrite mxE. Qed.
+
+
+(** 0 is absorbing *)
+Lemma mul0ext (u : exterior) : 0 *w u = 0.
+Proof.
+apply /rowP => i; rewrite -(enum_valK i).
+set A := enum_val i.
+rewrite mul_extE.
+rewrite big1 //=.
+rewrite ext0 //=.
+by move => j; rewrite ext0 !mul0r.
+Qed.
+
+
+Lemma mulext0 (u : exterior) : u *w 0 = 0.
+Proof.
+apply /rowP => i; rewrite -(enum_valK i).
+set A := enum_val i.
+rewrite mul_extE.
+rewrite big1 //=.
+rewrite ext0 //=.
+by move => j; rewrite ext0 mulrC !mulr0.
+Qed.
+
 
 
 
@@ -1016,10 +1043,14 @@ Lemma mul_blade_ext (R S : {set 'I_n}) : R *b S = blade R *w blade S.
 Proof.
 rewrite /mul_blade /mul_ext.
 rewrite (bigD1 R) //= addrC.
+case: (S == R).
+
 rewrite big1 => [|T TneqR]; last first.
   - rewrite blade_diff.
-    apply /rowP => i.
-    rewrite //=.
+    apply /rowP => (enum_rank (T :| sv)); rewrite //=.
+
+
+
 Admitted.
 
 
