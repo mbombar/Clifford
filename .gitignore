@@ -7,3 +7,6 @@
 *.vo
 *.glob
 *.v.d
+
+#La copie du dépot marelle si des modifs y sont faites.
+clifford.exterior.v

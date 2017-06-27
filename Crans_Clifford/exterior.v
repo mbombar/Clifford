@@ -693,10 +693,13 @@ by rewrite /sign delta_0 //= ND.
 Qed.
 
 
-Lemma signD_mul (R S T : {set 'I_n}) : [disjoint R & S] -> sign (R :|: S) T = (sign R T)*(sign S T).
+Lemma signDl (R S T : {set 'I_n}) : [disjoint R & S] -> sign (R :|: S) T = (sign R T)*(sign S T).
 Proof.
 move => dRS; rewrite /sign.
-Abort.
+Admitted.
+
+Lemma signDr (R S T : {set 'I_n}) : [disjoint S & T] -> sign R (S :|: T) = (sign R S)*(sign R T).
+Admitted.
 
 
 
@@ -708,19 +711,16 @@ by rewrite signND //= -setI_eq0 setIid; apply /set0Pn; exists i; rewrite set11.
 Qed.
 
 
-Lemma sign_single (i j : 'I_n) : i != j -> sign [set j] [set i] = - sign [set i] [set j].
+Lemma sign_single (i j : 'I_n) : sign [set j] [set i] = - sign [set i] [set j].
 Proof.
 have [->| neq_ij] := eqVneq i j; first by rewrite signii oppr0.
 rewrite /sign /exterior_enum !enum_set1 setUC. 
 rewrite delta_catC.
-by rewrite !size_sort muln1 expr1 mulN1r.
-by rewrite sort_uniq enum_uniq.
-have sortaa a : sort (fun i0 j0 : 'I_n => i0 <= j0) [:: a] = [:: a]. by [].
-rewrite !sortaa //=.
-rewrite perm_eq_sym perm_sort.
-rewrite uniq_perm_eq ?enum_uniq //=.
-  - by rewrite mem_seq1 eq_sym neq_ij.
-by move => x; rewrite !mem_enum !inE orbC.
+- by rewrite !size_sort muln1 expr1 mulN1r.
+- by rewrite sort_uniq enum_uniq.
+rewrite -![sort _ [::_]]/[:: _] perm_eq_sym perm_sort.
+rewrite uniq_perm_eq ?enum_uniq //= ?inE 1?eq_sym ?neq_ij //.
+by move=> x; rewrite !mem_enum !inE orbC.
 Qed.
 
 (*
@@ -759,15 +759,14 @@ Admitted.
 (** basis vector of the exterior algebra *)
 Definition blade A : exterior := (delta_mx 0 (enum_rank A)).
 
-
 Definition to_ext (x : 'rV_n) : exterior :=
   \sum_(i : 'I_n) (x 0 i) *: blade [set i].
 
-Local Notation "x %:ext" := (to_ext x) (at level 40).
+Local Notation "x %:ext" := (to_ext x) (format "x %:ext", at level 40).
 
-Lemma to_ext_add (x y : 'rV_n) : (x %:ext) + (y %:ext) = (x + y)%:ext.
+Lemma to_ext_add (x y : 'rV_n) : x%:ext + y%:ext = (x + y)%:ext.
 Proof.
-by rewrite /to_ext -big_split; apply : eq_bigr => i _; rewrite mxE scalerDl.
+by rewrite /to_ext -big_split; apply: eq_bigr => i _; rewrite mxE scalerDl.
 Qed.
 
 Lemma blade_eq (A B : {set 'I_n}) : B = A -> (blade A) 0 (enum_rank B) = 1.
@@ -1031,6 +1030,9 @@ rewrite big1 => [| U UneqS]; last first.
 by rewrite !blade_eq ?mul1r ?addr0.
 Qed.
 Hint Resolve mul_blade_ext.
+(** Better Alternative: *)
+Lemma mul_blades R S : blade R *w blade S = sign R S *: blade (R :|: S).
+Abort.
 
 
 
@@ -1103,14 +1105,9 @@ Lemma scalebladeAr a (S T : {set 'I_n}) : a *: (blade S *w blade T) = blade S *w
 Proof.
 apply /rowP => i; rewrite -(enum_valK i).
 set A := enum_val i; rewrite mxE !mul_extE.
-rewrite big_distrr //=.
-apply eq_bigr => R _.
-rewrite !mxE !mulrA //=.
-by congr ( _ * _); congr (_ * _) ; rewrite mulrC.
+rewrite big_distrr //=; apply eq_bigr => R _.
+by rewrite !mxE !mulrA //= [a * _]mulrC.
 Qed.
-
-
-
 
 (** Exterior product is associative *)
 
@@ -1119,33 +1116,24 @@ Qed.
 Lemma mul_bladeA (R S T : {set 'I_n}) : (blade R) *w ((blade S) *w (blade T)) = ((blade R) *w (blade S)) *w (blade T).
 Proof.
 rewrite -!mul_blade_ext /mul_blade -scalebladeAr -scaleextAl.
-rewrite -!mul_blade_ext /mul_blade !scalerA setUA.
-congr ( _ *: _).
-
-
-case : (R :&: S == set0).
-
-
-Admitted.
-*)
-
-
-
-Lemma mul_extA : associative mul_ext.
-Proof.
-move => u v w.
-apply/rowP => i.
-rewrite -(enum_valK i).
-set A := enum_val i.
-rewrite !mul_extE.
-(* rewrite (enum_val_nth i).
- rewrite enum_valP.*)
-(*
-Search _  "enum_val".
-
-About enum.
-apply enum_val.
-*)
+rewrite -!mul_blade_ext /mul_blade !scalerA setUA; congr ( _ *: _).
+have [disRS|NdisRS] := boolP [disjoint R & S]; last first.
+    - have NdisRSuT : ~~ [disjoint R & S :|: T]; last first.
+      by rewrite [sign R ( S :|: T)]signND ?[sign R S]signND
+                 ?mulr0 ?mul0r ?NdisRSuT.
+      have Subset : ((R :&: S) \subset R :&: (S :|: T)); last first.
+        - move: Subset NdisRS; rewrite -!setI_eq0.
+          exact: subset_neq0.
+      rewrite setIUr subsetUl //=.
+have [disST|NdisST] := boolP [disjoint S & T]; last first.
+  - have NdisRuST : ~~ [disjoint R :|: S & T]; last first.
+      by rewrite [sign (R :|: S) T]signND ?[sign S T]signND
+                 ?mulr0 ?mul0r ?NdisRSuT.
+      have Subset : ((S :&: T) \subset (R :|: S) :&: T); last first.
+        - move: Subset NdisST; rewrite -!setI_eq0.
+          exact: subset_neq0.
+      rewrite setIUl subsetUr //=.
+by rewrite signDl ?signDr ?disRS ?disST //= mulrC mulrA.
 Admitted.
 
 
@@ -1170,18 +1158,61 @@ by apply : eq_bigr => s _; rewrite mxE !mulrDr mulrDl.
 Qed.
 
 
+Lemma mul_extA : associative mul_ext.
+Proof.
+move => u v w.
+rewrite /mul_ext.
+apply/rowP => i.
+rewrite -(enum_valK i).
+set A := enum_val i.
+rewrite !mul_extE.
+(* rewrite (enum_val_nth i).
+ rewrite enum_valP.*)
+(*
+Search _  "enum_val".
+
+About enum.
+apply enum_val.
+*)
+Admitted.
+
 Section ExteriorRing.
+
+
+(** r-th exterior power *)
+Definition extn r : 'M[F]_dim :=
+ (\sum_(s : {set 'I_n} | #|s| == r) <<blade s>>)%MS.
+
+
+(*
+Notation "'Λ_r" := (extn r) (only parsing): type_scope.
+*)
+
+
+Lemma dim_extn r : \rank (extn r) = 'C(n, r).
+Proof.
+rewrite (mxdirectP _) /=; last first.
+  by rewrite mxdirect_delta // => i ???; apply: enum_rank_inj.
+rewrite (eq_bigr (fun=> 1%N)); last first.
+  by move=> s _; rewrite mxrank_gen mxrank_delta.
+by rewrite sum1dep_card card_draws card_ord.
+Qed.
+
+Lemma dim_exterior : \rank (1%:M : 'M[F]_dim) = (2 ^ n)%N.
+Proof.
+rewrite mxrank1 /dim (@eq_card _ _ (mem (powerset [set: 'I_n]))); last first.
+  by move=> A; rewrite !inE subsetT.
+by rewrite card_powerset cardsT card_ord.
+Qed.
+
 
 
 (** Non trivial ring *)
 Lemma ext_nonzero1 : id_ext != 0 :> exterior.
 Proof.
-(*
-by apply/eqP => /rowP/(_ 0)/eqP; rewrite !mxE oner_neq0.
-*)
-Admitted.
-
-
+apply/eqP=> /rowP /(_ (enum_rank set0)); rewrite !mxE /= eqxx.
+by move=> /eqP; rewrite oner_eq0.
+Qed.
 
 Definition exterior_ringMixin :=
   RingMixin (mul_extA) (mul_ext1x) (mul_extx1) 
@@ -1198,18 +1229,18 @@ End ExteriorRing.
 
 Delimit Scope ext_scope with ext.
 Local Open Scope ext_scope.
-Local Notation "\prod_ ( i | P ) B" :=
-  (\big[mul_ext/id_ext]_(i | P) B%ext) : ext_scope.
-Local Notation "\prod_ ( i < n | P ) B" :=
-  (\big[mul_ext/id_ext]_(i < n | P) B%ext) : ext_scope.
-Local Notation "\prod_ ( i <- r | P ) B" :=
-  (\big[mul_ext/id_ext]_(i <- r | P) B%ext) : ext_scope.
-Local Notation "\prod_ i B" :=
-  (\big[mul_ext/id_ext]_i B%ext) : ext_scope.
-Local Notation "\prod_ ( i < n ) B" :=
-  (\big[mul_ext/id_ext]_(i < n) B%ext) : ext_scope.
-Local Notation "\prod_ ( i <- r ) B" :=
-  (\big[mul_ext/id_ext]_(i <- r) B%ext) : ext_scope.
+(* Local Notation "\prod_ ( i | P ) B" := *)
+(*   (\big[mul_ext/id_ext]_(i | P) B%ext) : ext_scope. *)
+(* Local Notation "\prod_ ( i < n | P ) B" := *)
+(*   (\big[mul_ext/id_ext]_(i < n | P) B%ext) : ext_scope. *)
+(* Local Notation "\prod_ ( i <- r | P ) B" := *)
+(*   (\big[mul_ext/id_ext]_(i <- r | P) B%ext) : ext_scope. *)
+(* Local Notation "\prod_ i B" := *)
+(*   (\big[mul_ext/id_ext]_i B%ext) : ext_scope. *)
+(* Local Notation "\prod_ ( i < n ) B" := *)
+(*   (\big[mul_ext/id_ext]_(i < n) B%ext) : ext_scope. *)
+(* Local Notation "\prod_ ( i <- r ) B" := *)
+(*   (\big[mul_ext/id_ext]_(i <- r) B%ext) : ext_scope. *)
 
 
 
@@ -1270,7 +1301,7 @@ Erik Martin Dorel.
 
 
 
-Lemma mulxx0 (x : 'rV_n) : (x %:ext) ^+ 2 = 0.
+Lemma mulxx0 (x : 'rV_n) : (x%:ext) ^+ 2 = 0.
 Proof.
 (*
 
@@ -1313,33 +1344,6 @@ End ExteriorAlgebra.
 Variable r : nat.
 *)
 
-
-(** r-th exterior power *)
-Definition extn r : 'M[F]_dim :=
- (\sum_(s : {set 'I_n} | #|s| == r) <<blade s>>)%MS.
-
-
-(*
-Notation "'Λ_r" := (extn r) (only parsing): type_scope.
-*)
-
-
-Lemma dim_extn r : \rank (extn r) = 'C(n, r).
-Proof.
-rewrite (mxdirectP _) /=; last first.
-  by rewrite mxdirect_delta // => i ???; apply: enum_rank_inj.
-rewrite (eq_bigr (fun=> 1%N)); last first.
-  by move=> s _; rewrite mxrank_gen mxrank_delta.
-by rewrite sum1dep_card card_draws card_ord.
-Qed.
-
-
-Lemma dim_exterior : \rank (1%:M : 'M[F]_dim) = (2 ^ n)%N.
-Proof.
-rewrite mxrank1 /dim (@eq_card _ _ (mem (powerset [set: 'I_n]))); last first.
-  by move=> A; rewrite !inE subsetT.
-by rewrite card_powerset cardsT card_ord.
-Qed.
 
 
 (** The exterior algebra is the direct sum of the i-th exterior power as modules *)
@@ -1392,6 +1396,7 @@ Qed.
 
 (** Add something to have a natural cast 'rV_n --> exterior *)
 
+
 (** Add a lemma stating that x is zero iff each of its components is zero, must be in matrice/mxalgebra library. *)
 
 (* ssraglg -> axioms of algebra 
@@ -1411,8 +1416,6 @@ Lemma mul_extL (α : F) (u v : exterior) : (α * u) *w v = α * (u *w v).
 
 (** Universal Property ? *)
 
-
-(* End ExteriorDef. *)
 
 
 Section Form.
@@ -1506,6 +1509,7 @@ Abort.
 
 End Form.
 
+End ExteriorDef.
 
 
 (* Section Duality *)
