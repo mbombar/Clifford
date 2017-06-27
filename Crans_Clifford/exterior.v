@@ -414,7 +414,7 @@ Which is true *)
     rewrite permM.
     
     Print perm_invP.
-Admitted.
+Admitted
 
 
 Locate nth.
@@ -661,24 +661,30 @@ Qed.
 
 
 Lemma disjoint_seq (A B : {set 'I_n}) :
-  [disjoint A & B] = [disjoint (enum A) & (enum B)].
+  [disjoint A & B] = [disjoint (exterior_enum A) & (exterior_enum B)].
 Proof.
-Admitted.
+rewrite !disjoint_subset; apply/subsetP/subsetP => AB x;
+by have := AB x; rewrite !inE !mem_sort !mem_enum; apply.
+Qed.
 
 
+Lemma disjointC (A B : {set 'I_n}) : [disjoint A & B] = [disjoint B & A].
+Proof. by rewrite -setI_eq0 setIC setI_eq0. Qed.
 
 
 Lemma exterior_enum_disjoint (A B : {set 'I_n}) :  
     [disjoint A & B] = uniq ( exterior_enum A ++ exterior_enum B).
 Proof.
-rewrite cat_uniq !exterior_enum_uniq //=.
-Search _ "disjoint" "has".
-rewrite disjoint_seq disjoint_has.
+rewrite disjointC cat_uniq !exterior_enum_uniq andbT //=.
+by rewrite disjoint_seq disjoint_has. Qed.
+
+(* Search _ (mem _ _ = mem ).
+Search _ "mem" "C".
 rewrite /exterior_enum //=.
 Search _ "mem" "sort".
 (* rewrite mem_sort. *)
 Admitted.
-
+*)
 
 Lemma signND (A B : {set 'I_n}) : ~~ [disjoint A & B] -> sign A B = 0.
 Proof.
@@ -704,25 +710,29 @@ Qed.
 
 Lemma sign_single (i j : 'I_n) : i != j -> sign [set j] [set i] = - sign [set i] [set j].
 Proof.
-
-move => ineqj.
-
+have [->| neq_ij] := eqVneq i j; first by rewrite signii oppr0.
 rewrite /sign /exterior_enum !enum_set1 setUC. 
 rewrite delta_catC.
 by rewrite !size_sort muln1 expr1 mulN1r.
-
 by rewrite sort_uniq enum_uniq.
-
-Search _ "sort".
-
-
 have sortaa a : sort (fun i0 j0 : 'I_n => i0 <= j0) [:: a] = [:: a]. by [].
-
 rewrite !sortaa //=.
 rewrite perm_eq_sym perm_sort.
+rewrite uniq_perm_eq ?enum_uniq //=.
+  - by rewrite mem_seq1 eq_sym neq_ij.
+by move => x; rewrite !mem_enum !inE orbC.
+Qed.
+
+(*
+Search _ (_^~ _ = _ ^~ _).
+
+
+Search _ (count^~ _).
+
+
 
 Search _ (enum [set _]).
-(*
+
 (* apply /perm_eqP.
 
 apply perm_eq_refl. *)
@@ -742,8 +752,9 @@ apply sort_sorted.
 rewrite eq_sorted.
 rewrite perm_sort.
 Search _ "perm" "sort".
-*)
 Admitted.
+*)
+
 
 (** basis vector of the exterior algebra *)
 Definition blade A : exterior := (delta_mx 0 (enum_rank A)).
@@ -803,8 +814,6 @@ by rewrite /mul_blade setU0 signS01 scale1ext. Qed.
 Lemma rmul_blade_1 (S : {set 'I_n}) : set0 *b S  = blade S.
 Proof.
 by rewrite /mul_blade set0U sign0S1 scale1ext. Qed.
-
-
 
 
 
@@ -879,6 +888,7 @@ rewrite big1 => [|s spropA]; last first.
 rewrite blade_eq; last first. by rewrite setDv.
 by rewrite setDv addr0 signS01 ?mulr1.
 Qed.
+
 
 
 
@@ -1004,6 +1014,27 @@ Admitted.
 *)
 
 
+(** Blade product is a particular case of wedge product of two exterior *)
+Lemma mul_blade_ext (R S : {set 'I_n}) : R *b S = blade R *w blade S.
+Proof.
+rewrite /mul_blade /mul_ext.
+rewrite (bigD1 R) //= addrC.
+rewrite big1 => [|T TneqR]; last first.
+  - rewrite blade_diff ?TneqR //=.
+    rewrite (bigD1 S) //=.
+    rewrite big1 => [| U UneqS]; last first.
+      - by rewrite blade_diff ?UneqS ?mul0r ?scale0r.
+    by rewrite blade_eq ?mul0r ?scale0r ?addr0.
+rewrite add0r (bigD1 S) //=.
+rewrite big1 => [| U UneqS]; last first.
+ - by rewrite blade_eq ?blade_diff ?mul1r ?mul0r ?scale0r.
+by rewrite !blade_eq ?mul1r ?addr0.
+Qed.
+Hint Resolve mul_blade_ext.
+
+
+
+
 (** 0 is 0 *)
 Lemma ext0 (A : {set 'I_n}) : (0 : exterior) 0 (enum_rank A) = 0.
 Proof. by rewrite mxE. Qed.
@@ -1035,23 +1066,6 @@ Qed.
 
 
 
-(** Blade product is a particular case of wedge product of two exterior *)
-Lemma mul_blade_ext (R S : {set 'I_n}) : R *b S = blade R *w blade S.
-Proof.
-rewrite /mul_blade /mul_ext.
-rewrite (bigD1 R) //= addrC.
-rewrite big1 => [|T TneqR]; last first.
-  - rewrite blade_diff ?TneqR //=.
-    rewrite (bigD1 S) //=.
-    rewrite big1 => [| U UneqS]; last first.
-      - by rewrite blade_diff ?UneqS ?mul0r ?scale0r.
-    by rewrite blade_eq ?mul0r ?scale0r ?addr0.
-rewrite add0r (bigD1 S) //=.
-rewrite big1 => [| U UneqS]; last first.
- - by rewrite blade_eq ?blade_diff ?mul1r ?mul0r ?scale0r.
-by rewrite !blade_eq ?mul1r ?addr0.
-Qed.
-Hint Resolve mul_blade_ext.
 
 
 
@@ -1085,13 +1099,41 @@ Qed.
 
 
 
+Lemma scalebladeAr a (S T : {set 'I_n}) : a *: (blade S *w blade T) = blade S *w (a *: blade T).
+Proof.
+apply /rowP => i; rewrite -(enum_valK i).
+set A := enum_val i; rewrite mxE !mul_extE.
+rewrite big_distrr //=.
+apply eq_bigr => R _.
+rewrite !mxE !mulrA //=.
+by congr ( _ * _); congr (_ * _) ; rewrite mulrC.
+Qed.
 
 
 
 
 (** Exterior product is associative *)
-Lemma mul_extA (u v w : exterior) : u *w (v *w w) = u *w v *w w.
+
+(** Need excluded middle ?! *)
+
+Lemma mul_bladeA (R S T : {set 'I_n}) : (blade R) *w ((blade S) *w (blade T)) = ((blade R) *w (blade S)) *w (blade T).
 Proof.
+rewrite -!mul_blade_ext /mul_blade -scalebladeAr -scaleextAl.
+rewrite -!mul_blade_ext /mul_blade !scalerA setUA.
+congr ( _ *: _).
+
+
+case : (R :&: S == set0).
+
+
+Admitted.
+*)
+
+
+
+Lemma mul_extA : associative mul_ext.
+Proof.
+move => u v w.
 apply/rowP => i.
 rewrite -(enum_valK i).
 set A := enum_val i.
@@ -1130,9 +1172,13 @@ Qed.
 
 Section ExteriorRing.
 
+
 (** Non trivial ring *)
 Lemma ext_nonzero1 : id_ext != 0 :> exterior.
 Proof.
+(*
+by apply/eqP => /rowP/(_ 0)/eqP; rewrite !mxE oner_neq0.
+*)
 Admitted.
 
 
@@ -1182,13 +1228,59 @@ Qed.
 
 
 
+Lemma mul_bladexx0 (i : 'I_n) : (blade [set i]) * (blade [set i]) = 0.
+Proof. by rewrite -mulextE -mul_blade_ext /mul_blade signii scale0r. Qed.
+
+
 
 (** Only true for vectors from the original vector space *)
+
+
+(** 
+
+x ^+ 2 = \sum_{i<n}\sum_{j<n} x_i<i> *x_j<j> 
+
+       = \sum_{i<n}\sum_{j<n} x_ix_j (<i>*<j>)
+
+       = \sum_{i<n}[x_i ^+ 2 (<i>)^+ 2 + \sum_{j<i} x_ix_j <i><j> + \sum_{j>i} x_i x_j <i><j>]
+
+       = \sum_{i<n}[0 + \sum_{j<i} x_ix_j <i><j> + \sum_{j>i} x_i x_j <i><j>] using mul_bladexx0
+
+       = \sum_{i<n}[\sum_{j<i} x_ix_j <i><j> + \sum_{j>i} x_i x_j <i><j>]   using add0r
+
+       = \sum_{i<n}\sum_{j<i} x_ix_j <i><j> + \sum_{i<n}\sum_{j>i} x_i x_j <i><j>] using big_split
+
+       = \sum_{i<n}\sum_{j<i} x_ix_j <i><j> + \sum_{j<n}\sum_{i<j} x_i x_j <i><j>  using exchange_big
+
+       = \sum_{i<n}\sum_{j<i} x_ix_j <i><j> + \sum_{i<n}\sum_{j<i} x_j x_i <j><i>  (lign useless)
+
+       = \sum_{i<n}\sum_{j<i} [x_ix_j <i><j> + x_j x_i <j><i>]  split in the other side
+
+       = \sum_{i<n}\sum_{j<i}  x_ix_j [<i><j> +  <j><i>]  factorization
+
+       = \sum_{i<n}\sum_{j<i} [x_ix_j * 0]  Opposed sign
+
+       = \sum_{i<n}\sum_{j<i} 0 
+
+       = 0
+
+Erik Martin Dorel.
+**)
+
+
+
+
 Lemma mulxx0 (x : 'rV_n) : (x %:ext) ^+ 2 = 0.
 Proof.
-(* rewrite /to_ext expr2.
+(*
+
+rewrite /to_ext expr2.
 rewrite big_distrlr //=.
+rewrite exchange_big //=.
 rewrite big1 //= => i _.
+rewrite (bigD1 i) //=.
+rewrite -scaleextAr !scalerAl scalerA -scalerAl.
+rewrite mul_bladexx0 scaler0 add0r.
 rewrite big1 //= => j _.
 rewrite mulrA.
 rewrite scaleextAr.
