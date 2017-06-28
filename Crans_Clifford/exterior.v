@@ -1134,7 +1134,7 @@ have [disST|NdisST] := boolP [disjoint S & T]; last first.
           exact: subset_neq0.
       rewrite setIUl subsetUr //=.
 by rewrite signDl ?signDr ?disRS ?disST //= mulrC mulrA.
-Admitted.
+Qed.
 
 
 (** Left Distributivity *)
