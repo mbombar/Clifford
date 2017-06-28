@@ -1175,6 +1175,9 @@ Qed.
 Lemma mul_extBl (u v w : exterior) : (u - v) *w w = u *w w - v *w w.
 Proof. by rewrite mul_extDl mul_Next. Qed.
 
+Lemma mul_extBr (u v w : exterior) : u *w (v - w) = u *w v - u *w w.
+Proof. by rewrite mul_extDr mul_extN. Qed.
+
 Lemma mul_extA : associative mul_ext.
 Proof.
 move => u v w.
