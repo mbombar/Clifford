@@ -1146,7 +1146,13 @@ apply: eq_bigr=> s _.
 by rewrite mxE -mulNr; congr ( _ * _); rewrite mulrN.
 Qed.
 
-
+Lemma mul_Next (u v : exterior) : -u *w v = - (u *w v).
+Proof.
+apply/rowP=> i; rewrite -(enum_valK i); set A := enum_val i.
+rewrite !mxE !mul_extE -sumrN.
+apply: eq_bigr=> s _.
+by rewrite mxE -mulNr; congr ( _ * _); rewrite mulNr.
+Qed.
 
 (** Left Distributivity *)
 Lemma mul_extDl : left_distributive mul_ext +%R.
