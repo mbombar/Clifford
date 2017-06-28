@@ -1109,35 +1109,6 @@ rewrite big_distrr //=; apply eq_bigr => R _.
 by rewrite !mxE !mulrA //= [a * _]mulrC.
 Qed.
 
-(** Exterior product is associative *)
-
-(** Need excluded middle ?! *)
-
-Lemma mul_bladeA (R S T : {set 'I_n}) : (blade R) *w ((blade S) *w (blade T)) = ((blade R) *w (blade S)) *w (blade T).
-Proof.
-rewrite -!mul_blade_ext /mul_blade -scalebladeAr -scaleextAl.
-rewrite -!mul_blade_ext /mul_blade !scalerA setUA; congr ( _ *: _).
-have [disRS|NdisRS] := boolP [disjoint R & S]; last first.
-    - have NdisRSuT : ~~ [disjoint R & S :|: T]; last first.
-      by rewrite [sign R ( S :|: T)]signND ?[sign R S]signND
-                 ?mulr0 ?mul0r ?NdisRSuT.
-      have Subset : ((R :&: S) \subset R :&: (S :|: T)); last first.
-        - move: Subset NdisRS; rewrite -!setI_eq0.
-          exact: subset_neq0.
-      rewrite setIUr subsetUl //=.
-have [disST|NdisST] := boolP [disjoint S & T]; last first.
-  - have NdisRuST : ~~ [disjoint R :|: S & T]; last first.
-      by rewrite [sign (R :|: S) T]signND ?[sign S T]signND
-                 ?mulr0 ?mul0r ?NdisRSuT.
-      have Subset : ((S :&: T) \subset (R :|: S) :&: T); last first.
-        - move: Subset NdisST; rewrite -!setI_eq0.
-          exact: subset_neq0.
-      rewrite setIUl subsetUr //=.
-by rewrite signDl ?signDr ?disRS ?disST //= mulrC mulrA.
-Qed.
-
-
-
 Lemma mul_extN (u v : exterior) : u *w (-v) = - (u *w v).
 Proof.
 apply/rowP=> i; rewrite -(enum_valK i); set A := enum_val i.
@@ -1177,6 +1148,43 @@ Proof. by rewrite mul_extDl mul_Next. Qed.
 
 Lemma mul_extBr (u v w : exterior) : u *w (v - w) = u *w v - u *w w.
 Proof. by rewrite mul_extDr mul_extN. Qed.
+
+Lemma mul_ext_suml (u : exterior) I r P (v_ : I -> exterior) :
+   (\sum_(i <- r | P i) v_ i) *w u = \sum_(i <- r | P i) v_ i *w u.
+Proof.
+by apply: (big_morph (mul_ext^~ u)) => [v w|]; rewrite ?mul0ext ?mul_extDl.
+Qed.
+
+Lemma mul_ext_sumr (u : exterior) I r P (v_ : I -> exterior) :
+   u *w (\sum_(i <- r | P i) v_ i) = \sum_(i <- r | P i) u *w v_ i.
+Proof.
+by apply: (big_morph (mul_ext u)) => [v w|]; rewrite ?mulext0 ?mul_extDr.
+Qed.
+
+(** Exterior product is associative *)
+
+Lemma mul_bladeA (R S T : {set 'I_n}) : (blade R) *w ((blade S) *w (blade T)) = ((blade R) *w (blade S)) *w (blade T).
+Proof.
+rewrite -!mul_blade_ext /mul_blade -scalebladeAr -scaleextAl.
+rewrite -!mul_blade_ext /mul_blade !scalerA setUA; congr ( _ *: _).
+have [disRS|NdisRS] := boolP [disjoint R & S]; last first.
+    - have NdisRSuT : ~~ [disjoint R & S :|: T]; last first.
+      by rewrite [sign R ( S :|: T)]signND ?[sign R S]signND
+                 ?mulr0 ?mul0r ?NdisRSuT.
+      have Subset : ((R :&: S) \subset R :&: (S :|: T)); last first.
+        - move: Subset NdisRS; rewrite -!setI_eq0.
+          exact: subset_neq0.
+      rewrite setIUr subsetUl //=.
+have [disST|NdisST] := boolP [disjoint S & T]; last first.
+  - have NdisRuST : ~~ [disjoint R :|: S & T]; last first.
+      by rewrite [sign (R :|: S) T]signND ?[sign S T]signND
+                 ?mulr0 ?mul0r ?NdisRSuT.
+      have Subset : ((S :&: T) \subset (R :|: S) :&: T); last first.
+        - move: Subset NdisST; rewrite -!setI_eq0.
+          exact: subset_neq0.
+      rewrite setIUl subsetUr //=.
+by rewrite signDl ?signDr ?disRS ?disST //= mulrC mulrA.
+Qed.
 
 Lemma mul_extA : associative mul_ext.
 Proof.
