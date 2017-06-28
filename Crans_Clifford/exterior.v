@@ -1030,9 +1030,8 @@ rewrite big1 => [| U UneqS]; last first.
 by rewrite !blade_eq ?mul1r ?addr0.
 Qed.
 Hint Resolve mul_blade_ext.
+
 (** Better Alternative: *)
-Lemma mul_blades R S : blade R *w blade S = sign R S *: blade (R :|: S).
-Abort.
 
 
 
@@ -1064,11 +1063,22 @@ rewrite ext0 //=.
 by move => j; rewrite ext0 mulrC !mulr0.
 Qed.
 
+(*
+
+Lemma ext_sum_blade (u : exterior) : 
+  u = \sum_su u 0 (enum_rank su) *: blade su.
+Proof.
+apply /rowP=> i; rewrite -(enum_valK i); set A := enum_val i.
+rewrite summxE. 
 
 
 
 
+rewrite {1}[u]matrix_sum_delta big_ord1 /blade.
+apply /rowP=> i; rewrite -(enum_valK i); set A := enum_val i.
+rewrite summxE.
 
+*)
 
 
 (*
@@ -1188,20 +1198,29 @@ Qed.
 
 Lemma mul_extA : associative mul_ext.
 Proof.
-move => u v w.
-rewrite /mul_ext.
-apply/rowP => i.
-rewrite -(enum_valK i).
-set A := enum_val i.
-rewrite !mul_extE.
-(* rewrite (enum_val_nth i).
- rewrite enum_valP.*)
-(*
-Search _  "enum_val".
+(* move => u v w. *)
+(* rewrite [v *w w]/mul_ext [u *w v]/mul_ext. *)
+(* rewrite /mul_ext. *)
+(* rewrite mul_ext_sumr mul_ext_suml. *)
+(* apply eq_bigr => A _. *)
+(* rewrite mul_ext_sumr mul_ext_suml. *)
+(* apply eq_bigr => B _. *)
+(* rewrite /mul_ext. *)
+(* apply eq_bigr=> S _. *)
+(* apply eq_bigr=> R _. *)
 
-About enum.
-apply enum_val.
-*)
+(* apply/rowP => i. *)
+(* rewrite -(enum_valK i). *)
+(* set A := enum_val i. *)
+(* rewrite !mul_extE. *)
+(* (* rewrite (enum_val_nth i). *)
+(*  rewrite enum_valP.*) *)
+(* (* *)
+(* Search _  "enum_val". *)
+
+(* About enum. *)
+(* apply enum_val. *)
+(* *) *)
 Admitted.
 
 Section ExteriorRing.
@@ -1285,10 +1304,30 @@ Qed.
 
 
 
+Lemma mul_blades R S : blade R * blade S = sign R S *: blade (R :|: S).
+Proof.
+rewrite -mulextE /mul_ext.
+rewrite (bigD1 R) //= addrC.
+rewrite big1 => [|T TneqR]; last first.
+  - rewrite blade_diff ?TneqR //=.
+    rewrite (bigD1 S) //=.
+    rewrite big1 => [| U UneqS]; last first.
+      - by rewrite blade_diff ?UneqS ?mul0r ?scale0r.
+    by rewrite blade_eq ?mul0r ?scale0r ?addr0.
+rewrite add0r (bigD1 S) //=.
+rewrite big1 => [| U UneqS]; last first.
+ - by rewrite blade_eq ?blade_diff ?mul1r ?mul0r ?scale0r.
+by rewrite !blade_eq ?mul1r ?addr0.
+Qed.
+
 
 
 Lemma mul_bladexx0 (i : 'I_n) : (blade [set i]) * (blade [set i]) = 0.
 Proof. by rewrite -mulextE -mul_blade_ext /mul_blade signii scale0r. Qed.
+
+Lemma mul_bladeNC (i j : 'I_n) : 
+  (blade [set i])*(blade [set j]) = - (blade [set j])*(blade [set i]).
+Proof. by rewrite mulNr !mul_blades sign_single scaleNr setUC. Qed.
 
 
 
@@ -1322,41 +1361,94 @@ x ^+ 2 = \sum_{i<n}\sum_{j<n} x_i<i> *x_j<j>
        = \sum_{i<n}\sum_{j<i} 0 
 
        = 0
-
 Erik Martin Dorel.
 **)
 
 
 
 
+
+
+
+
+(** neq_ltn : (m != n) = (m < n) || (m > n) *)
 Lemma mulxx0 (x : 'rV_n) : (x%:ext) ^+ 2 = 0.
 Proof.
-(*
-
 rewrite /to_ext expr2.
 rewrite big_distrlr //=.
-rewrite exchange_big //=.
-rewrite big1 //= => i _.
-rewrite (bigD1 i) //=.
-rewrite -scaleextAr !scalerAl scalerA -scalerAl.
-rewrite mul_bladexx0 scaler0 add0r.
-rewrite big1 //= => j _.
-rewrite mulrA.
-rewrite scaleextAr.
-(* rewrite -big_split_ord.*)
-(* rewrite big1_eq.  *)
-(* rewrite -scaleextAr. *)
-Search _ "sum" "eq0".
-*)
+rewrite (eq_bigr (fun (i : 'I_n) => 
+\sum_(j<n | j<i)x``_i*x``_j*:((blade [set i])*(blade [set j])) + \sum_(j<n | j>i)x``_i*x``_j*:((blade [set i])*(blade [set j])))).
+rewrite big_split /=.
+
+rewrite [X in _ + X](exchange_big_dep predT) //=.
+rewrite -big_split /=.
+rewrite big1 //=.
+
+move=> i _; rewrite -big_split big1 //=.
+
+move=> j _; rewrite mulrC -scalerDr [X in _ + X]mul_bladeNC.
+rewrite -[X in X + _]add0r.
+rewrite mulNr addrK.
+rewrite scaler0 //=.
+
+
+move=> i _; rewrite (bigD1 i) //=.
+rewrite -scalerAl -scaleextAr mul_bladexx0 !scaler0 add0r.
+rewrite (bigID (fun (j : 'I_n) => (j<i))) //=.
+
+
+(* move : neq_ltn => H. *)
+
+
+
+(* have jlei a b : (a != b) && (a < b) = (a < b). *)
+(*   by rewrite ltn_neqAle Bool.andb_assoc Bool.andb_diag. *)
+
+(* have jgei a b : (a != b) && ~~ (a < b) = (a > b). *)
+(* rewrite (jlei b a). *)
+(* rewrite [in RHS]ltn_neqAle eq_sym. congr ( _ && _). *)
+
+(* rewrite neq_ltn andb_orl andbN //=. *)
+
+
+(* rewrite eqVneq.  *)
+
+(* rewrite (eq_bigr (fun (i : 'I_n) =>  *)
+(* \sum_(j<n | j<i)x``_i*x``_j*:((blade [set i])*(blade [set j]) + (blade) + \sum_(j<n | j>i)x``_i*x``_j*:((blade [set i])*(blade [set j])))). *)
+
+
+(* rewrite big1 //= => i _. *)
+(* rewrite (bigD1 i) //=. *)
+(* rewrite -scaleextAr !scalerAl scalerA -scalerAl. *)
+(* rewrite mul_bladexx0 scaler0 add0r. *)
+(* rewrite big1 //= => j _. *)
+(* rewrite mulrA. *)
+(* rewrite scaleextAr. *)
+(* (* rewrite -big_split_ord.*) *)
+(* (* rewrite big1_eq.  *) *)
+(* (* rewrite -scaleextAr. *) *)
+(* Search _ "sum" "eq0". *)
+(* *)
 Admitted.
 
 
 
+Lemma sqextrD (u v : exterior) : (u + v)^+2 = u^+2 + u*v + v*u + v^+2.
+Proof. by rewrite expr2 mulrDl !mulrDr addrA -!expr2. Qed.
+
+
+
+
+(** Probleme de typage ? zmodtype ?? *)
 Lemma mul_extNC (x y : 'rV_n) : (to_ext x) * (to_ext y) = - (to_ext y) * (to_ext x).
 Proof.
-have sumsquare0 : ((x%:ext) + (y%:ext)) * ( (x%:ext) + (y%:ext)) = 0. 
-  by rewrite to_ext_add -expr2 mulxx0.
-move : sumsquare0.
+rewrite mulNr.
+have : ((x%:ext) + (y%:ext))^+2 (* * ( (x%:ext) + (y%:ext)) *) = 0. 
+  by rewrite expr2 to_ext_add -expr2 mulxx0.
+rewrite sqextrD !mulxx0 addr0 add0r.
+(* suff oppK z : - - z = z. *)
+(* rewrite -(oppK (y%:ext) * (x%:ext)). *)
+(* apply : subr0_eq. *)
 (* rewrite -expr2 [in LHS]sqrrD !mulxx0 addrK. Qed*)
 Admitted.
 
@@ -1399,48 +1491,6 @@ Qed.
 
 (* Lemma mul_extnV (u v : exterior) r s : (u <= extn r)%MS -> (v <= extn s)%MS -> *)
 (*   (u *w v)  = 0. *)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-(** Add something to have a natural cast 'rV_n --> exterior *)
-
-
-(** Add a lemma stating that x is zero iff each of its components is zero, must be in matrice/mxalgebra library. *)
-
-(* ssraglg -> axioms of algebra 
-Mixin, canonical etc
-*)
-
-(* Lemma to_ext1 (u : 'rV_n) : (to_ext u <= extn 1%N)%MS. *)
-
-
-
-
-(*
-
-(** Linearity *)
-Lemma mul_extL (α : F) (u v : exterior) : (α * u) *w v = α * (u *w v).
-*)
 
 (** Universal Property ? *)
 
@@ -1499,7 +1549,6 @@ Definition multilinear_alternate r (f : r.-form) :=
 
 
 (* Lemma, the set of all alternating multilinear forms is a  vector space (as the sum of two such maps or the product with a scalar is again alternating *)
-
 
 
 Lemma ext_of_formK r (f : r.-form) : multilinear_alternate f -> 
