@@ -1163,8 +1163,6 @@ rewrite mxE !mul_extE -big_split //=.
 by apply : eq_bigr => s _; rewrite mxE !mulrDl.
 Qed.
 
-
-
 (** Right Distributivity *)
 Lemma mul_extDr : right_distributive mul_ext +%R.
 Proof.
@@ -1173,6 +1171,9 @@ set A := enum_val i.
 rewrite mxE !mul_extE -big_split //=.
 by apply : eq_bigr => s _; rewrite mxE !mulrDr mulrDl.
 Qed.
+
+Lemma mul_extBl (u v w : exterior) : (u - v) *w w = u *w w - v *w w.
+Proof. by rewrite mul_extDl mul_Next. Qed.
 
 Lemma mul_extA : associative mul_ext.
 Proof.
