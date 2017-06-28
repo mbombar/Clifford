@@ -1137,6 +1137,17 @@ by rewrite signDl ?signDr ?disRS ?disST //= mulrC mulrA.
 Qed.
 
 
+
+Lemma mul_extN (u v : exterior) : u *w (-v) = - (u *w v).
+Proof.
+apply/rowP=> i; rewrite -(enum_valK i); set A := enum_val i.
+rewrite !mxE !mul_extE -sumrN.
+apply: eq_bigr=> s _.
+by rewrite mxE -mulNr; congr ( _ * _); rewrite mulrN.
+Qed.
+
+
+
 (** Left Distributivity *)
 Lemma mul_extDl : left_distributive mul_ext +%R.
 Proof.
@@ -1156,7 +1167,6 @@ set A := enum_val i.
 rewrite mxE !mul_extE -big_split //=.
 by apply : eq_bigr => s _; rewrite mxE !mulrDr mulrDl.
 Qed.
-
 
 Lemma mul_extA : associative mul_ext.
 Proof.
