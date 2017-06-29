@@ -1063,39 +1063,19 @@ rewrite ext0 //=.
 by move => j; rewrite ext0 mulrC !mulr0.
 Qed.
 
-(*
+
 
 Lemma ext_sum_blade (u : exterior) : 
   u = \sum_su u 0 (enum_rank su) *: blade su.
 Proof.
 apply /rowP=> i; rewrite -(enum_valK i); set A := enum_val i.
-rewrite summxE. 
-
-
-
-
-rewrite {1}[u]matrix_sum_delta big_ord1 /blade.
-apply /rowP=> i; rewrite -(enum_valK i); set A := enum_val i.
 rewrite summxE.
-
-*)
-
-
-(*
-Lemma scaleextDl (u : exterior) x y : (x + y) *: u = x *: u + y *: u.
-Proof.
-Admitted.
-
-Lemma scaleextDr (u v : exterior)  x : x *: (u + v) = x *: u + x *: v.
-Admitted.
-
-Lemma scaleextA x y (u : exterior) : x *: (y *: u) = (x * y) *: u.
-Admitted.
-
-
-Definition exterior_lmodMixin :=
-  LmodMixin scaleextA scale1ext scaleextDr scaleextDr.
-*)
+rewrite (eq_bigr (fun k => u``_(enum_rank k) * ((blade k) 0 (enum_rank A)))).
+rewrite (bigD1 A) //=.
+by rewrite blade_eq ?mulr1 ?big1 ?addr0 //;
+move => ??; rewrite blade_diff ?mulr0 //=; rewrite eq_sym.
+by move => ??; rewrite mxE.
+Qed.
 
 
 (** Homogeneity of wedge product *)
@@ -1109,10 +1089,6 @@ rewrite big_distrr //=.
 by apply eq_bigr => S _; rewrite !mulrA mxE.
 Qed.
 
-
-
-
-
 Lemma scaleextAr a (u v : exterior) : a *: (u *w v) = u *w (a *: v).
 Proof.
 apply /rowP => i; rewrite -(enum_valK i).
@@ -1122,9 +1098,6 @@ apply eq_bigr => S _.
 rewrite mxE !mulrA.
 by congr ( _ * _); congr (_ * _) ; rewrite mulrC.
 Qed.
-
-
-
 
 (* Lemma scalebladeAr a (S T : {set 'I_n}) : a *: (blade S *w blade T) = blade S *w (a *: blade T). *)
 (* Proof. *)
@@ -1174,6 +1147,8 @@ Proof. by rewrite mul_extDl mul_Next. Qed.
 Lemma mul_extBr (u v w : exterior) : u *w (v - w) = u *w v - u *w w.
 Proof. by rewrite mul_extDr mul_extN. Qed.
 
+
+(** bilinearity *)
 Lemma mul_ext_suml (u : exterior) I r P (v_ : I -> exterior) :
    (\sum_(i <- r | P i) v_ i) *w u = \sum_(i <- r | P i) v_ i *w u.
 Proof.
@@ -1185,6 +1160,15 @@ Lemma mul_ext_sumr (u : exterior) I r P (v_ : I -> exterior) :
 Proof.
 by apply: (big_morph (mul_ext u)) => [v w|]; rewrite ?mulext0 ?mul_extDr.
 Qed.
+
+
+
+Lemma mul_ext_sumlr I J rI rJ pI pJ (u_ : I -> exterior) (v_ : J -> exterior) :
+  (\sum_(i <- rI | pI i) u_ i) *w (\sum_(j <- rJ | pJ j) v_ j) = \sum_(i <- rI | pI i) \sum_(j <- rJ | pJ j) (u_ i) *w (v_ j). 
+Proof. by rewrite mul_ext_suml; apply: eq_bigr => i _; rewrite mul_ext_sumr. Qed.
+
+
+
 
 (** Exterior product is associative *)
 
@@ -1213,30 +1197,40 @@ Qed.
 
 Lemma mul_extA : associative mul_ext.
 Proof.
-(* move => u v w. *)
-(* rewrite [v *w w]/mul_ext [u *w v]/mul_ext. *)
-(* rewrite /mul_ext. *)
-(* rewrite mul_ext_sumr mul_ext_suml. *)
-(* apply eq_bigr => A _. *)
-(* rewrite mul_ext_sumr mul_ext_suml. *)
-(* apply eq_bigr => B _. *)
-(* rewrite /mul_ext. *)
-(* apply eq_bigr=> S _. *)
-(* apply eq_bigr=> R _. *)
+move => u v w.
+rewrite [in RHS](ext_sum_blade u) [in LHS](ext_sum_blade w) (ext_sum_blade v).
+rewrite !mul_ext_sumlr.
+rewrite [X in X *w _ = _]ext_sum_blade [X in _ = _*w X]ext_sum_blade.
+rewrite [in LHS]mul_ext_suml [in RHS]mul_ext_sumr.
+rewrite [in LHS](eq_bigr (fun (i : {set 'I_n}) =>
+\sum_j \sum_k ((u``_(enum_rank i) * v``_(enum_rank j) * w``_(enum_rank k)) *: ((blade i) *w ( (blade j) *w (blade k)))))).
+rewrite [in RHS](eq_bigr (fun (i : {set 'I_n}) =>
+\sum_su (\sum_sv (u``_(enum_rank su) * v``_(enum_rank sv) * w``_(enum_rank i)) *: ( ( (blade su) *w (blade sv) ) *w (blade i) )))) .
+rewrite [in RHS]exchange_big //=.
+apply eq_bigr => R _.
+rewrite [X in _ = X]exchange_big //=.
+apply eq_bigr => S _.
+apply eq_bigr => T _.
+by rewrite mul_bladeA.
+move => T _.
+rewrite [in LHS]mul_ext_suml.
+apply: eq_bigr => R _.
+rewrite [in LHS]mul_ext_suml.
+apply: eq_bigr => S _.
+by rewrite -scaleextAl
+-(scaleextAr (v``_(enum_rank S))) scalerA
+-scaleextAl -scaleextAr scalerA.
+move => R _.
+rewrite [in LHS]mul_ext_sumr.
+apply: eq_bigr => S _.
+rewrite [in LHS]mul_ext_sumr.
+apply: eq_bigr => T _.
+by rewrite -scaleextAl
+-(scaleextAl (v``_(enum_rank S)))
+-(scaleextAr (w``_(enum_rank T))) scalerA
+-(scaleextAr (v``_(enum_rank S) * w``_(enum_rank T))) scalerA mulrA.
+Qed.
 
-(* apply/rowP => i. *)
-(* rewrite -(enum_valK i). *)
-(* set A := enum_val i. *)
-(* rewrite !mul_extE. *)
-(* (* rewrite (enum_val_nth i). *)
-(*  rewrite enum_valP.*) *)
-(* (* *)
-(* Search _  "enum_val". *)
-
-(* About enum. *)
-(* apply enum_val. *)
-(* *) *)
-Admitted.
 
 Section ExteriorRing.
 
