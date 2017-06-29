@@ -1111,13 +1111,28 @@ Qed.
 
 
 
-Lemma scalebladeAr a (S T : {set 'I_n}) : a *: (blade S *w blade T) = blade S *w (a *: blade T).
+
+
+Lemma scaleextAr a (u v : exterior) : a *: (u *w v) = u *w (a *: v).
 Proof.
 apply /rowP => i; rewrite -(enum_valK i).
 set A := enum_val i; rewrite mxE !mul_extE.
-rewrite big_distrr //=; apply eq_bigr => R _.
-by rewrite !mxE !mulrA //= [a * _]mulrC.
+rewrite big_distrr //=.
+apply eq_bigr => S _.
+rewrite mxE !mulrA.
+by congr ( _ * _); congr (_ * _) ; rewrite mulrC.
 Qed.
+
+
+
+
+(* Lemma scalebladeAr a (S T : {set 'I_n}) : a *: (blade S *w blade T) = blade S *w (a *: blade T). *)
+(* Proof. *)
+(* apply /rowP => i; rewrite -(enum_valK i). *)
+(* set A := enum_val i; rewrite mxE !mul_extE. *)
+(* rewrite big_distrr //=; apply eq_bigr => R _. *)
+(* by rewrite !mxE !mulrA //= [a * _]mulrC. *)
+(* Qed. *)
 
 Lemma mul_extN (u v : exterior) : u *w (-v) = - (u *w v).
 Proof.
@@ -1175,7 +1190,7 @@ Qed.
 
 Lemma mul_bladeA (R S T : {set 'I_n}) : (blade R) *w ((blade S) *w (blade T)) = ((blade R) *w (blade S)) *w (blade T).
 Proof.
-rewrite -!mul_blade_ext /mul_blade -scalebladeAr -scaleextAl.
+rewrite -!mul_blade_ext /mul_blade -scaleextAr -scaleextAl.
 rewrite -!mul_blade_ext /mul_blade !scalerA setUA; congr ( _ *: _).
 have [disRS|NdisRS] := boolP [disjoint R & S]; last first.
     - have NdisRSuT : ~~ [disjoint R & S :|: T]; last first.
@@ -1231,15 +1246,15 @@ Definition extn r : 'M[F]_dim :=
  (\sum_(s : {set 'I_n} | #|s| == r) <<blade s>>)%MS.
 
 
-(*
-Notation "'Λ_r" := (extn r) (only parsing): type_scope.
-*)
+
+(* Notation "'Λ_r" := (extn r) (only parsing): type_scope. *)
+
 
 
 Lemma dim_extn r : \rank (extn r) = 'C(n, r).
 Proof.
 rewrite (mxdirectP _) /=; last first.
-  by rewrite mxdirect_delta // => i ???; apply: enum_rank_inj.
+   by rewrite mxdirect_delta // => i ???; apply: enum_rank_inj.
 rewrite (eq_bigr (fun=> 1%N)); last first.
   by move=> s _; rewrite mxrank_gen mxrank_delta.
 by rewrite sum1dep_card card_draws card_ord.
@@ -1251,7 +1266,6 @@ rewrite mxrank1 /dim (@eq_card _ _ (mem (powerset [set: 'I_n]))); last first.
   by move=> A; rewrite !inE subsetT.
 by rewrite card_powerset cardsT card_ord.
 Qed.
-
 
 
 (** Non trivial ring *)
@@ -1266,7 +1280,8 @@ Definition exterior_ringMixin :=
             (mul_extDl) (mul_extDr) (ext_nonzero1).
 
 Canonical exterior_ringType := Eval hnf in RingType exterior exterior_ringMixin.
-Canonical matrix_lAlgType := Eval hnf in LalgType F exterior (scaleextAl).
+Canonical exterior_lAlgType := Eval hnf in LalgType F exterior (scaleextAl).
+Canonical exterior_AlgType  := Eval hnf in AlgType  F exterior (scaleextAr).
 
 
 Lemma mulextE : mul_ext = *%R. Proof. by []. Qed.
@@ -1288,19 +1303,6 @@ Local Open Scope ext_scope.
 (*   (\big[mul_ext/id_ext]_(i < n) B%ext) : ext_scope. *)
 (* Local Notation "\prod_ ( i <- r ) B" := *)
 (*   (\big[mul_ext/id_ext]_(i <- r) B%ext) : ext_scope. *)
-
-
-
-
-Lemma scaleextAr a (u v : exterior) : a *: (u * v) = u * (a *: v).
-Proof.
-apply /rowP => i; rewrite -(enum_valK i).
-set A := enum_val i; rewrite mxE !mul_extE.
-rewrite big_distrr //=.
-apply eq_bigr => S _.
-rewrite mxE !mulrA.
-by congr ( _ * _); congr (_ * _) ; rewrite mulrC.
-Qed.
 
 
 
@@ -1393,7 +1395,7 @@ rewrite scaler0 //=.
 
 
 move=> i _; rewrite (bigD1 i) //=.
-rewrite -scalerAl -scaleextAr mul_bladexx0 !scaler0 add0r.
+rewrite -scalerAl -scalerAr mul_bladexx0 !scaler0 add0r.
 rewrite (bigID (fun (j : 'I_n) => (j<i))) //=.
 
 
