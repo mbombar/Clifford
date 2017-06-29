@@ -1235,32 +1235,6 @@ Qed.
 Section ExteriorRing.
 
 
-(** r-th exterior power *)
-Definition extn r : 'M[F]_dim :=
- (\sum_(s : {set 'I_n} | #|s| == r) <<blade s>>)%MS.
-
-
-
-(* Notation "'Λ_r" := (extn r) (only parsing): type_scope. *)
-
-
-
-Lemma dim_extn r : \rank (extn r) = 'C(n, r).
-Proof.
-rewrite (mxdirectP _) /=; last first.
-   by rewrite mxdirect_delta // => i ???; apply: enum_rank_inj.
-rewrite (eq_bigr (fun=> 1%N)); last first.
-  by move=> s _; rewrite mxrank_gen mxrank_delta.
-by rewrite sum1dep_card card_draws card_ord.
-Qed.
-
-Lemma dim_exterior : \rank (1%:M : 'M[F]_dim) = (2 ^ n)%N.
-Proof.
-rewrite mxrank1 /dim (@eq_card _ _ (mem (powerset [set: 'I_n]))); last first.
-  by move=> A; rewrite !inE subsetT.
-by rewrite card_powerset cardsT card_ord.
-Qed.
-
 
 (** Non trivial ring *)
 Lemma ext_nonzero1 : id_ext != 0 :> exterior.
@@ -1447,6 +1421,30 @@ rewrite sqextrD !mulxx0 addr0 add0r.
 (* apply : subr0_eq. *)
 (* rewrite -expr2 [in LHS]sqrrD !mulxx0 addrK. Qed*)
 Admitted.
+
+(** r-th exterior power *)
+Definition extn r : 'M[F]_dim :=
+ (\sum_(s : {set 'I_n} | #|s| == r) <<blade s>>)%MS.
+
+(* Notation "'Λ_r" := (extn r) (only parsing): type_scope. *)
+
+Lemma dim_extn r : \rank (extn r) = 'C(n, r).
+Proof.
+rewrite (mxdirectP _) /=; last first.
+   by rewrite mxdirect_delta // => i ???; apply: enum_rank_inj.
+rewrite (eq_bigr (fun=> 1%N)); last first.
+  by move=> s _; rewrite mxrank_gen mxrank_delta.
+by rewrite sum1dep_card card_draws card_ord.
+Qed.
+
+Lemma dim_exterior : \rank (1%:M : 'M[F]_dim) = (2 ^ n)%N.
+Proof.
+rewrite mxrank1 /dim (@eq_card _ _ (mem (powerset [set: 'I_n]))); last first.
+  by move=> A; rewrite !inE subsetT.
+by rewrite card_powerset cardsT card_ord.
+Qed.
+
+
 
 End ExteriorAlgebra.
 
