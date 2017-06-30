@@ -668,14 +668,14 @@ by have := AB x; rewrite !inE !mem_sort !mem_enum; apply.
 Qed.
 
 
-Lemma disjointC (A B : {set 'I_n}) : [disjoint A & B] = [disjoint B & A].
-Proof. by rewrite -setI_eq0 setIC setI_eq0. Qed.
+(* Lemma disjointC (A B : {set 'I_n}) : [disjoint A & B] = [disjoint B & A]. *)
+(* Proof. by rewrite -setI_eq0 setIC setI_eq0. Qed. *)
 
 
 Lemma exterior_enum_disjoint (A B : {set 'I_n}) :  
     [disjoint A & B] = uniq ( exterior_enum A ++ exterior_enum B).
 Proof.
-rewrite disjointC cat_uniq !exterior_enum_uniq andbT //=.
+rewrite disjoint_sym cat_uniq !exterior_enum_uniq andbT //=.
 by rewrite disjoint_seq disjoint_has. Qed.
 
 (* Search _ (mem _ _ = mem ).
