@@ -1477,18 +1477,12 @@ Notation "r .-form" := (form_of r)
   (at level 2, format "r .-form") : type_scope.
 
 
-(* ~ scalar product *)
-Definition form_of_ext r (u : exterior) : r.-form := fun v =>
-  \sum_(s : {set 'I_n} | #|s| == r)
-     u 0 (enum_rank s) * (\prod_i to_ext (row i v)) 0 (enum_rank s).
-
-
-(* Exterior product of two alternating form *)
-Definition mul_form r s (a : r.-form) (b : s.-form) : (r + s).-form := 
-  fun v => ((r + s)`!)%:R^-1 * \sum_(sigma : 'S_(r + s))
-            (- 1) ^ sigma *
-                    a (\matrix_(i < r) row (sigma (unsplit (inl i))) v) * 
-                    b (\matrix_(i < s) row (sigma (unsplit (inr i))) v).
+(* (* Exterior product of two alternating form *) *)
+(* Definition mul_form r s (a : r.-form) (b : s.-form) : (r + s).-form :=  *)
+(*   fun v => ((r + s)`!)%:R^-1 * \sum_(sigma : 'S_(r + s)) *)
+(*             (- 1) ^ sigma * *)
+(*                     a (\matrix_(i < r) row (sigma (unsplit (inl i))) v) *  *)
+(*                     b (\matrix_(i < s) row (sigma (unsplit (inr i))) v). *)
 
 
 (*Definition exterior_enum (s : {set 'I_n}) : seq 'I_n :=
@@ -1499,11 +1493,20 @@ Definition mul_form r s (a : r.-form) (b : s.-form) : (r + s).-form :=
 
 (* Definition canon_tuple (s : {set 'I_n}) := Tuple (size_exterior_enum s). *)
 
+
+(* ~ scalar product *)
+Definition form_of_ext r (u : exterior) : r.-form := fun v =>
+  \sum_(s : {set 'I_n} | #|s| == r)
+     u 0 (enum_rank s) * (\prod_i to_ext (row i v)) 0 (enum_rank s).
+
 Definition ext_of_form r (f : r.-form) : exterior :=
   \sum_(s : {set 'I_n} | #|s| == r)
    f (\matrix_(i < r) nth 0 [seq delta_mx 0 i | i <- exterior_enum s] i) *: blade s.
 
-(* Lemma mul_extDr :  (u v : exterior) (A : {set 'I_n}) : *)
+
+Definition mul_form r s (a : r.-form) (b : s.-form) : (r+s).-form := 
+form_of_ext ( (ext_of_form a) * (ext_of_form b)).
+
 
 Definition multilinear r (f : r.-form) := 
    forall (A B C : 'M_(r,n)) (i0 : 'I_r) (b c : F),
