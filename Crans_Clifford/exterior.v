@@ -1397,14 +1397,13 @@ Proof. by rewrite expr2 mulrDl !mulrDr addrA -!expr2. Qed.
 Lemma mul_extNC (x y : 'rV_n) : (to_ext x) * (to_ext y) = - (to_ext y) * (to_ext x).
 Proof.
 rewrite mulNr.
-have : ((x%:ext) + (y%:ext))^+2 (* * ( (x%:ext) + (y%:ext)) *) = 0. 
+have : ((x%:ext) + (y%:ext))^+2 = 0. 
   by rewrite expr2 to_ext_add -expr2 mulxx0.
 rewrite sqextrD !mulxx0 addr0 add0r.
-(* suff oppK z : - - z = z. *)
-(* rewrite -(oppK (y%:ext) * (x%:ext)). *)
-(* apply : subr0_eq. *)
-(* rewrite -expr2 [in LHS]sqrrD !mulxx0 addrK. Qed*)
-Admitted.
+move => /eqP H.
+by apply/eqP; rewrite -addr_eq0.
+Qed.
+
 
 (** r-th exterior power *)
 Definition extn r : 'M[F]_dim :=
