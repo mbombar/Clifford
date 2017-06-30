@@ -1504,7 +1504,7 @@ Definition ext_of_form r (f : r.-form) : exterior :=
    f (\matrix_(i < r) nth 0 [seq delta_mx 0 i | i <- exterior_enum s] i) *: blade s.
 
 
-Definition mul_form r s (a : r.-form) (b : s.-form) : (r+s).-form := 
+Definition mul_form r s (a : r.-form) (b : s.-form) : (r+s).-form :=
 form_of_ext ( (ext_of_form a) * (ext_of_form b)).
 
 
@@ -1529,7 +1529,13 @@ Lemma ext_of_formK r (f : r.-form) : multilinear_alternate f ->
 Proof.
 move=> f_ma v.
 rewrite /form_of_ext /ext_of_form /=.
-Abort.
+Admitted.
+
+
+Lemma form_of_extK r (u : exterior) : u \in extn r ->
+  ext_of_form (@form_of_ext r u) =1 u.
+Proof.
+Admitted.
 
 Lemma form_of_multilinear_alternate r (x : exterior) :
   multilinear_alternate (form_of_ext x : r.-form).
@@ -1539,8 +1545,10 @@ Abort.
 
 Lemma mul_ext_form r s (f : r.-form) (g : s.-form) :
   multilinear_alternate f -> multilinear_alternate g -> 
-  ext_of_form (mul_form f g) = (ext_of_form f) * (ext_of_form g).
+  ext_of_form (mul_form f g) =1 (ext_of_form f) * (ext_of_form g).
 Proof.
+move=> f_ma g_ma; rewrite /mul_form.
+rewrite form_of_extK.
 Abort.
 
 (* Definition split_form r (I : {set 'I_r}) (f : r.-form) *)
