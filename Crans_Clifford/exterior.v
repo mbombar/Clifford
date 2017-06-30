@@ -1428,15 +1428,6 @@ by rewrite card_powerset cardsT card_ord.
 Qed.
 
 
-
-End ExteriorAlgebra.
-
-
-
-
-
-
-
 (*
 Variable r : nat.
 *)
@@ -1471,6 +1462,8 @@ Qed.
 
 (** Universal Property ? *)
 
+
+End ExteriorAlgebra.
 
 
 Section Form.
