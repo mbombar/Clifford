@@ -127,9 +127,9 @@ About tnth.
     so = Output Sequence
     This lemma states that :
         if si = so modulo a permutation,
-        if σ=(perm_of_2seq si so) then 
+        if σ=(perm_of_2seq si so) then
 
-                  the j   -th element of si 
+                  the j   -th element of si
 is exactly        the σ(j)-th element of so *)
 
 Lemma perm_of_2seqE n (si so : n.-tuple T) (j : 'I_n) :
@@ -158,7 +158,7 @@ Qed.
 
 
 
-(** If si is injective (uniq si) ie, if it represents a permutation, then the inverse of 
+(** If si is injective (uniq si) ie, if it represents a permutation, then the inverse of
     (perm_of_2seq si so) is exactly (perm_of_2seq so si *)
 
 Lemma perm_of_2seqV n (si so : n.-tuple T) : uniq si ->
@@ -191,7 +191,7 @@ Locate in_tuple.
  *)
 
 
-(** Generalized Kronecker symbol : 
+(** Generalized Kronecker symbol :
 
 I=(i_1, ..., i_n)
 K=(k_1, ..., k_n)
@@ -201,7 +201,7 @@ K=(k_1, ..., k_n)
 
 Reference :  http://www.unige.ch/math/folks/ronga/lyse_II/2003-2004/chap_IV.pdf (def 1.5)
  *)
- 
+
 Definition delta (i k : seq T) : R :=
   if (perm_eq i k) && (uniq i) then
   (-1) ^+ perm_of_2seq (insubd (in_tuple k) i) (in_tuple k) else 0.
@@ -215,7 +215,7 @@ About delta.
 *)
 
 
-Lemma deltaE n (i k : seq T) (si : size i = n) (sk : size k = n) : 
+Lemma deltaE n (i k : seq T) (si : size i = n) (sk : size k = n) :
   let T l (P : size l = n)  := Tuple (appP eqP idP P) in
   delta i k = if (perm_eq i k) && (uniq i)
               then (-1) ^+ perm_of_2seq (T _ si) (T _ sk) else 0.
@@ -269,9 +269,9 @@ Qed.
 (*   perm_of_2seq i (tcast eq_mn k) = scast eq_mn (perm_of_2seq i k). *)
 
 
-Lemma perm_of_2seq_ii n (i : n.-tuple T) : uniq i -> 
+Lemma perm_of_2seq_ii n (i : n.-tuple T) : uniq i ->
   perm_of_2seq i i = (1%g).
-Proof. 
+Proof.
 move=> ?; apply/permP => /= j; apply/val_inj/eqP => /=.
 by rewrite permE -(@nth_uniq _ (tnth_default i j) i) ?size_tuple // -tnth_nth
    perm_of_2seqE.
@@ -345,8 +345,8 @@ by  rewrite -signr_addb -odd_permM perm_of_2seq_comp.
 Qed.
 
 
-Lemma perm_of_2seq_perm n (s : n.-tuple T) (σ : 'S_n) : 
-  uniq s -> 
+Lemma perm_of_2seq_perm n (s : n.-tuple T) (σ : 'S_n) :
+  uniq s ->
   perm_of_2seq [tuple (tnth s (σ x)) | x < n] s = σ.
 Proof.
 move=> us; apply/permP => //= i; apply/val_inj/eqP.
@@ -361,7 +361,7 @@ Qed.
   rewrite tupleE.
   *)
 
-Lemma perm_of_2seq_perm2 n (s1 s2 : n.-tuple T) (s : 'S_n) : 
+Lemma perm_of_2seq_perm2 n (s1 s2 : n.-tuple T) (s : 'S_n) :
   uniq s2 -> perm_eq s1 s2 ->
   perm_of_2seq s1 s2 = (s^-1 * perm_of_2seq [tuple (tnth s1 (s x)) | x < n] s2)%g.
 Proof.
@@ -385,7 +385,7 @@ have : perm_eq [tuple tnth s1 (s x) | x < n] s1.
 (*  apply /eqP. *)
   move : s12.
   About perm_eq_trans.
-  (* Idea : 
+  (* Idea :
 perm_eq s1 s2 -> perm_eq s1 σ -> perm_eq σ s2.
 Yet, p0 states ~~ (perm_eq σ s2). So false -> anything. *)
     by admit.
@@ -400,19 +400,19 @@ Yet, p0 states ~~ (perm_eq σ s2). So false -> anything. *)
        H2 : (s*s1)%g = (σ2 * s2)%g
 Goal : σ1 j = (s^-1*σ2)%g j
 
-Because (uniq s2), this is equivalent to (using associativity) : 
+Because (uniq s2), this is equivalent to (using associativity) :
        (σ1*s2)%g j = (s^-1 * (σ2 * s2)%g)%g j
 
 Rewrite H1, H2 :
         s1 j = (s^-1 * (s*s1)%g)%g j
 
-Using associativity + cancel inverse (~ invK) : 
+Using associativity + cancel inverse (~ invK) :
         s1 j = s1 j
 
 Which is true *)
-    
+
     rewrite permM.
-    
+
     Print perm_invP.
 Admitted
 
@@ -422,14 +422,14 @@ Locate nth.
 
 
 
-Lemma delta_perm n (i k : n.-tuple T) (σ : 'S_n) : 
+Lemma delta_perm n (i k : n.-tuple T) (σ : 'S_n) :
   uniq k -> perm_eq i k -> delta [tuple (tnth i (σ x)) | x < n ] k = (-1)^+ σ * delta i k.
 Proof.
 
 
 move => uk pik.
 set τ := [tuple tnth i (σ x) | x < n].
-have pτi : perm_eq τ i by apply /tuple_perm_eqP; exists σ. 
+have pτi : perm_eq τ i by apply /tuple_perm_eqP; exists σ.
 have pτk : perm_eq τ k by rewrite (perm_eq_trans pτi pik).
 have ui : uniq i by rewrite (perm_eq_uniq pik).
 have uτ : uniq τ by rewrite (perm_eq_uniq pτk).
@@ -441,7 +441,7 @@ rewrite (@delta_comp τ i k uk pτi pik).
 congr ( _ * _).
 (* rewrite στi. *)
 
-(* rewrite deltaC.*) 
+(* rewrite deltaC.*)
 rewrite /delta pτi uτ //=.
 (* rewrite στi. *)
 rewrite in_tupleE.
@@ -487,7 +487,7 @@ apply /tuple_perm_eqP.
 
 
 (*
-Lemma delta_perm n (i k : seq T) (x0 : T) (s : 'S_n) : size k = n -> 
+Lemma delta_perm n (i k : seq T) (x0 : T) (s : 'S_n) : size k = n ->
   uniq k -> perm_eq i k ->
   delta i k = (- 1) ^+ s * delta [tuple (nth x0 i (s x)) | x < n] k.
 Proof.
@@ -528,14 +528,14 @@ Abort.
 
 
 (* Need for distributivity *)
-(** Scheme of a proof : 
+(** Scheme of a proof :
 
-j ++ i = [tuple (tnth (i++j) (σ x)) | x < n]. Not really easy to compute such a permutation σ though, 
+j ++ i = [tuple (tnth (i++j) (σ x)) | x < n]. Not really easy to compute such a permutation σ though,
 maybe using perm_of_2seq cleverly, but it is easy to compute it step by step :
 
 i2 .... ir j1 .... js i1 = i ∘ (1 2 .... r r+1 ... r+s) the (r+s)-cycle whose signature is (-1)^(r+s-1), and one just has to compute it r times to have j ++ i.
 
-Then, using delta_perm : 
+Then, using delta_perm :
 
 delta (i ++ j) k = (-1) ^+ (size i + size j - 1) * delta ( i2 ... ir j1 ... js i1) k
                  = ( (-1) ^+ (size i + size j - 1) ) ^+ (size i) delta (j ++ i) k
@@ -574,7 +574,7 @@ Lemma submx_sum_cap (F : fieldType) (k m1 n : nat)
 Proof.
 elim/big_ind2: _; rewrite ?capmx0 => //=.
 by move=> ???? /addsmxS H /H /submx_trans -> //; apply: submx_add_cap.
-Qed. 
+Qed.
 
 End Useful_Lemma.
 
@@ -645,7 +645,7 @@ Definition sign (A B : {set 'I_n}) : F :=
 Lemma sign0S1 (S : {set 'I_n}) : sign set0 S = 1.
 Proof.
 rewrite /sign set0U exterior_enum_set0 cat0s.
-by rewrite deltaii ?exterior_enum_uniq. 
+by rewrite deltaii ?exterior_enum_uniq.
 Qed.
 
 Lemma signS01 (S : {set 'I_n}) : sign S set0 = 1.
@@ -672,7 +672,7 @@ Qed.
 (* Proof. by rewrite -setI_eq0 setIC setI_eq0. Qed. *)
 
 
-Lemma exterior_enum_disjoint (A B : {set 'I_n}) :  
+Lemma exterior_enum_disjoint (A B : {set 'I_n}) :
     [disjoint A & B] = uniq ( exterior_enum A ++ exterior_enum B).
 Proof.
 rewrite disjoint_sym cat_uniq !exterior_enum_uniq andbT //=.
@@ -706,7 +706,7 @@ Admitted.
 
 
 Lemma signii (i : 'I_n) : sign [set i] [set i] = 0.
-Proof. 
+Proof.
 by rewrite signND //= -setI_eq0 setIid; apply /set0Pn; exists i; rewrite set11.
 Qed.
 
@@ -714,7 +714,7 @@ Qed.
 Lemma sign_single (i j : 'I_n) : sign [set j] [set i] = - sign [set i] [set j].
 Proof.
 have [->| neq_ij] := eqVneq i j; first by rewrite signii oppr0.
-rewrite /sign /exterior_enum !enum_set1 setUC. 
+rewrite /sign /exterior_enum !enum_set1 setUC.
 rewrite delta_catC.
 - by rewrite !size_sort muln1 expr1 mulN1r.
 - by rewrite sort_uniq enum_uniq.
@@ -803,7 +803,7 @@ Definition mul_blade (R S : {set 'I_n}) : exterior := sign R S *: blade (R :|: S
 Local Notation "*b%F" := (@mul_blade _).
 Local Notation "R *b S" := (mul_blade R S) (at level 40).
 
-Definition id_ext : exterior := blade set0. 
+Definition id_ext : exterior := blade set0.
 
 (** id_ext is an identity element *)
 Lemma lmul_blade_1 (S : {set 'I_n}) : S *b set0 = blade S.
@@ -828,7 +828,7 @@ Local Notation "u *w w" := (mul_ext u w) (at level 40).
 
 
 Lemma mul_extE (u v : exterior) (A : {set 'I_n}) :
-  (u *w v) 0 (enum_rank A) = 
+  (u *w v) 0 (enum_rank A) =
   \sum_(s in powerset A)
    (u 0 (enum_rank s) * v 0 (enum_rank (A :\: s)) * sign s (A :\: s)).
 Proof.
@@ -859,7 +859,7 @@ Lemma mul_ext1x : left_id id_ext mul_ext.
 Proof.
 move=> u; apply /rowP => i; rewrite -(enum_valK i).
 set A := enum_val i.
-rewrite mul_extE.  
+rewrite mul_extE.
 rewrite (bigD1 (set0)) //=; last first.
   - by rewrite powersetE sub0set.
 rewrite big1 => [|s sneq0]; last first.
@@ -984,7 +984,7 @@ move : SsubA.
 rewrite (@negbTE (~~ (s \subset A))).
 Search _ (_ -> ~~ _ -> _).
 
-(* 
+(*
 rewrite contraT.
 rewrite powersetE andbC -properEneq.
 rewrite //=.
@@ -998,7 +998,7 @@ Search _ (_ || _ -> _).
 apply /nandP.
 rewrite powersetE andbC -properEneq.
 move=> spropA.
-apply/set0Pn. 
+apply/set0Pn.
 apply /setDP.
 
 rewrite proper_card.
@@ -1065,7 +1065,7 @@ Qed.
 
 
 
-Lemma ext_sum_blade (u : exterior) : 
+Lemma ext_sum_blade (u : exterior) :
   u = \sum_su u 0 (enum_rank su) *: blade su.
 Proof.
 apply /rowP=> i; rewrite -(enum_valK i); set A := enum_val i.
@@ -1164,7 +1164,7 @@ Qed.
 
 
 Lemma mul_ext_sumlr I J rI rJ pI pJ (u_ : I -> exterior) (v_ : J -> exterior) :
-  (\sum_(i <- rI | pI i) u_ i) *w (\sum_(j <- rJ | pJ j) v_ j) = \sum_(i <- rI | pI i) \sum_(j <- rJ | pJ j) (u_ i) *w (v_ j). 
+  (\sum_(i <- rI | pI i) u_ i) *w (\sum_(j <- rJ | pJ j) v_ j) = \sum_(i <- rI | pI i) \sum_(j <- rJ | pJ j) (u_ i) *w (v_ j).
 Proof. by rewrite mul_ext_suml; apply: eq_bigr => i _; rewrite mul_ext_sumr. Qed.
 
 
@@ -1244,7 +1244,7 @@ by move=> /eqP; rewrite oner_eq0.
 Qed.
 
 Definition exterior_ringMixin :=
-  RingMixin (mul_extA) (mul_ext1x) (mul_extx1) 
+  RingMixin (mul_extA) (mul_ext1x) (mul_extx1)
             (mul_extDl) (mul_extDr) (ext_nonzero1).
 
 Canonical exterior_ringType := Eval hnf in RingType exterior exterior_ringMixin.
@@ -1255,7 +1255,7 @@ Canonical exterior_AlgType  := Eval hnf in AlgType  F exterior (scaleextAr).
 Lemma mulextE : mul_ext = *%R. Proof. by []. Qed.
 Lemma id_extE : id_ext = 1. Proof. by []. Qed.
 
-End ExteriorRing. 
+End ExteriorRing.
 
 Delimit Scope ext_scope with ext.
 Local Open Scope ext_scope.
@@ -1295,7 +1295,7 @@ Qed.
 Lemma mul_bladexx0 (i : 'I_n) : (blade [set i]) * (blade [set i]) = 0.
 Proof. by rewrite -mulextE -mul_blade_ext /mul_blade signii scale0r. Qed.
 
-Lemma mul_bladeNC (i j : 'I_n) : 
+Lemma mul_bladeNC (i j : 'I_n) :
   (blade [set i])*(blade [set j]) = - (blade [set j])*(blade [set i]).
 Proof. by rewrite mulNr !mul_blades sign_single scaleNr setUC. Qed.
 
@@ -1307,7 +1307,7 @@ Lemma mulxx0 (x : 'rV_n) : (x%:ext) ^+ 2 = 0.
 Proof.
 rewrite /to_ext expr2.
 rewrite big_distrlr //=.
-rewrite (eq_bigr (fun (i : 'I_n) => 
+rewrite (eq_bigr (fun (i : 'I_n) =>
 \sum_(j<n | j<i)x``_i*x``_j*:((blade [set i])*(blade [set j])) + \sum_(j<n | j>i)x``_i*x``_j*:((blade [set i])*(blade [set j])))).
 rewrite big_split /=.
 rewrite [X in _ + X](exchange_big_dep predT) //=.
@@ -1397,7 +1397,7 @@ Proof. by rewrite expr2 mulrDl !mulrDr addrA -!expr2. Qed.
 Lemma mul_extNC (x y : 'rV_n) : (to_ext x) * (to_ext y) = - (to_ext y) * (to_ext x).
 Proof.
 rewrite mulNr.
-have : ((x%:ext) + (y%:ext))^+2 = 0. 
+have : ((x%:ext) + (y%:ext))^+2 = 0.
   by rewrite expr2 to_ext_add -expr2 mulxx0.
 rewrite sqextrD !mulxx0 addr0 add0r.
 move => /eqP H.
@@ -1440,10 +1440,10 @@ Lemma mxdirect_extn : mxdirect (\sum_(i < n.+1) extn i).
 Proof.
 have card_small (A : {set 'I_n}) : (#|A| < n.+1)%N.
   by rewrite ltnS (leq_trans (max_card _)) ?card_ord.
-apply/mxdirectP=> /=; rewrite -(@partition_big _ _ _ _ _ xpredT 
+apply/mxdirectP=> /=; rewrite -(@partition_big _ _ _ _ _ xpredT
           (fun A => Ordinal (card_small A)) xpredT) //=.
 rewrite (mxdirectP _) ?mxdirect_delta //=; last by move=> ????/enum_rank_inj.
-by rewrite (@partition_big _ _ _ _ _ xpredT 
+by rewrite (@partition_big _ _ _ _ _ xpredT
           (fun A => Ordinal (card_small A)) xpredT) //=.
 Qed.
 
@@ -1508,13 +1508,13 @@ Definition mul_form r s (a : r.-form) (b : s.-form) : (r+s).-form :=
 form_of_ext ( (ext_of_form a) * (ext_of_form b)).
 
 
-Definition multilinear r (f : r.-form) := 
+Definition multilinear r (f : r.-form) :=
    forall (A B C : 'M_(r,n)) (i0 : 'I_r) (b c : F),
    row i0 A = b *: row i0 B + c *: row i0 C ->
    row' i0 B = row' i0 A ->
    row' i0 C = row' i0 A -> f A = b * f B + c * f C.
 
-Definition alternate r (f : r.-form) := 
+Definition alternate r (f : r.-form) :=
   forall (A : 'M_(r, n)) (i1 i2 : 'I_r), i1 != i2 -> A i1 =1 A i2 -> f A = 0.
 
 Definition multilinear_alternate r (f : r.-form) :=
@@ -1524,7 +1524,7 @@ Definition multilinear_alternate r (f : r.-form) :=
 (* Lemma, the set of all alternating multilinear forms is a  vector space (as the sum of two such maps or the product with a scalar is again alternating *)
 
 
-Lemma ext_of_formK r (f : r.-form) : multilinear_alternate f -> 
+Lemma ext_of_formK r (f : r.-form) : multilinear_alternate f ->
   form_of_ext (ext_of_form f) =1 f.
 Proof.
 move=> f_ma v.
@@ -1544,7 +1544,7 @@ Proof.
 Abort.
 
 Lemma mul_ext_form r s (f : r.-form) (g : s.-form) :
-  multilinear_alternate f -> multilinear_alternate g -> 
+  multilinear_alternate f -> multilinear_alternate g ->
   ext_of_form (mul_form f g) =1 (ext_of_form f) * (ext_of_form g).
 Proof.
 move=> f_ma g_ma; rewrite /mul_form.
@@ -1554,7 +1554,7 @@ Abort.
 (* Definition split_form r (I : {set 'I_r}) (f : r.-form) *)
 (*            (v : 'M_(r - #|I|,n)) : #|I|.-form := fun u => *)
 (*   f (\matrix_k if k \in I then row k u else row k v). *)
-  
+
 
 
 (*   (if r isn't r'.+1 return 'I_r -> r.-form -> 'M_(r.-1,n) -> F *)
