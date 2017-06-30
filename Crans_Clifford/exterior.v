@@ -1303,45 +1303,6 @@ Proof. by rewrite mulNr !mul_blades sign_single scaleNr setUC. Qed.
 
 (** Only true for vectors from the original vector space *)
 
-
-(** 
-
-x ^+ 2 = \sum_{i<n}\sum_{j<n} x_i<i> *x_j<j> 
-
-       = \sum_{i<n}\sum_{j<n} x_ix_j (<i>*<j>)
-
-       = \sum_{i<n}[x_i ^+ 2 (<i>)^+ 2 + \sum_{j<i} x_ix_j <i><j> + \sum_{j>i} x_i x_j <i><j>]
-
-       = \sum_{i<n}[0 + \sum_{j<i} x_ix_j <i><j> + \sum_{j>i} x_i x_j <i><j>] using mul_bladexx0
-
-       = \sum_{i<n}[\sum_{j<i} x_ix_j <i><j> + \sum_{j>i} x_i x_j <i><j>]   using add0r
-
-       = \sum_{i<n}\sum_{j<i} x_ix_j <i><j> + \sum_{i<n}\sum_{j>i} x_i x_j <i><j>] using big_split
-
-       = \sum_{i<n}\sum_{j<i} x_ix_j <i><j> + \sum_{j<n}\sum_{i<j} x_i x_j <i><j>  using exchange_big
-
-       = \sum_{i<n}\sum_{j<i} x_ix_j <i><j> + \sum_{i<n}\sum_{j<i} x_j x_i <j><i>  (lign useless)
-
-       = \sum_{i<n}\sum_{j<i} [x_ix_j <i><j> + x_j x_i <j><i>]  split in the other side
-
-       = \sum_{i<n}\sum_{j<i}  x_ix_j [<i><j> +  <j><i>]  factorization
-
-       = \sum_{i<n}\sum_{j<i} [x_ix_j * 0]  Opposed sign
-
-       = \sum_{i<n}\sum_{j<i} 0 
-
-       = 0
-Erik Martin Dorel.
-**)
-
-
-
-
-
-
-
-
-(** neq_ltn : (m != n) = (m < n) || (m > n) *)
 Lemma mulxx0 (x : 'rV_n) : (x%:ext) ^+ 2 = 0.
 Proof.
 rewrite /to_ext expr2.
@@ -1349,7 +1310,6 @@ rewrite big_distrlr //=.
 rewrite (eq_bigr (fun (i : 'I_n) => 
 \sum_(j<n | j<i)x``_i*x``_j*:((blade [set i])*(blade [set j])) + \sum_(j<n | j>i)x``_i*x``_j*:((blade [set i])*(blade [set j])))).
 rewrite big_split /=.
-
 rewrite [X in _ + X](exchange_big_dep predT) //=.
 rewrite -big_split /=.
 rewrite big1 //=.
@@ -1357,6 +1317,7 @@ rewrite big1 //=.
 move=> i _; rewrite -big_split big1 //=.
 
 move=> j _; rewrite mulrC -scalerDr [X in _ + X]mul_bladeNC.
+
 rewrite -[X in X + _]add0r.
 rewrite mulNr addrK.
 rewrite scaler0 //=.
@@ -1364,21 +1325,46 @@ rewrite scaler0 //=.
 
 move=> i _; rewrite (bigD1 i) //=.
 rewrite -scalerAl -scalerAr mul_bladexx0 !scaler0 add0r.
+move : neq_ltn => neq_ltn.
+
+have jltni a b : (a != b) && (a < b) = (a < b).
+by rewrite ltn_neqAle Bool.andb_assoc Bool.andb_diag.
+
 rewrite (bigID (fun (j : 'I_n) => (j<i))) //=.
+have p1 : (fun j =>  (j != i) && (j < i)) =1 (fun j => j < i).
+  by move=> j; rewrite jltni.
+
+rewrite (eq_bigl _ _ p1).
+
+have p2 : (fun j =>  (j != i) && ~~(j < i)) =1 (fun j => j > i).
+move=> j.
+rewrite -leqNgt leq_eqVlt Bool.andb_orb_distrib_r andbC eq_sym.
+by rewrite Bool.andb_negb_r orFb eq_sym jltni.
+
+rewrite (eq_bigl _ _ p2).
+
+rewrite -!bigU /=.
+apply : eq_bigr => j _.
+by rewrite -scalerAr -scalerAl scalerA mulrC.
+
+
+by rewrite disjoint_subset; apply /subsetP => j;
+rewrite !inE !unfold_in eqnE -leqNgt; apply leq_trans.
+
+
+by rewrite disjoint_subset; apply /subsetP => j;
+rewrite !inE !unfold_in eqnE -leqNgt; apply leq_trans.
+
+Qed.
+
+(* rewrite eq_bigr. *)
+(* rewrite (bigID (fun (j : 'I_n) => (j<i))) //=. *)
 
 
 (* move : neq_ltn => H. *)
 
 
 
-(* have jlei a b : (a != b) && (a < b) = (a < b). *)
-(*   by rewrite ltn_neqAle Bool.andb_assoc Bool.andb_diag. *)
-
-(* have jgei a b : (a != b) && ~~ (a < b) = (a > b). *)
-(* rewrite (jlei b a). *)
-(* rewrite [in RHS]ltn_neqAle eq_sym. congr ( _ && _). *)
-
-(* rewrite neq_ltn andb_orl andbN //=. *)
 
 
 (* rewrite eqVneq.  *)
@@ -1399,8 +1385,6 @@ rewrite (bigID (fun (j : 'I_n) => (j<i))) //=.
 (* (* rewrite -scaleextAr. *) *)
 (* Search _ "sum" "eq0". *)
 (* *)
-Admitted.
-
 
 
 Lemma sqextrD (u v : exterior) : (u + v)^+2 = u^+2 + u*v + v*u + v^+2.
