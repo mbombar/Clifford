@@ -1532,7 +1532,7 @@ rewrite /form_of_ext /ext_of_form /=.
 Admitted.
 
 
-Lemma form_of_extK r (u : exterior) : u \in extn r ->
+Lemma form_of_extK r (u : exterior) : (* u \in extn r-> *)
   ext_of_form (@form_of_ext r u) =1 u.
 Proof.
 Admitted.
@@ -1548,7 +1548,6 @@ Lemma mul_ext_form r s (f : r.-form) (g : s.-form) :
   ext_of_form (mul_form f g) =1 (ext_of_form f) * (ext_of_form g).
 Proof.
 move=> f_ma g_ma; rewrite /mul_form.
-rewrite form_of_extK.
 Abort.
 
 (* Definition split_form r (I : {set 'I_r}) (f : r.-form) *)
