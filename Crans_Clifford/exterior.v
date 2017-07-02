@@ -1502,6 +1502,16 @@ Definition ext_of_form r (f : r.-form) : exterior :=
    f (\matrix_(i < r) nth 0 [seq delta_mx 0 i | i <- exterior_enum s] i) *: blade s.
 
 
+
+
+(* Alternative definition *)
+(* Definition form_of_ext2 r (u : exterior) : r.-form := fun v => *)
+(*    \sum_(s : {set 'I_n} | #|s| == r) *)
+(*       u 0 (enum_rank s) * (\det (\matrix_(i < r, j \in S) (to_ext (row i v)) 0 j)). *)
+
+
+
+
 Definition null_form r : r.-form := (form_of_ext 0).
 
 
@@ -1560,6 +1570,8 @@ Lemma ext_of_formK r (f : r.-form) : multilinear_alternate f ->
   form_of_ext (ext_of_form f) =1 f.
 Proof.
 move=> f_ma v.
+have f_m : multilinear f. exact : (proj1 f_ma).
+have f_a : alternate f. exact : (proj2 f_ma).
 rewrite /form_of_ext /ext_of_form /=.
 Admitted.
 
