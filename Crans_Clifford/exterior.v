@@ -1603,9 +1603,9 @@ Admitted.
 
 
 Lemma multilinear_form_of_multilinear_alternate r (x : exterior) :
-  r < n -> multilinear (form_of_ext x : r.-form).
+  (* r <= n -> *) multilinear (form_of_ext x : r.-form).
 Proof.
-move => leqrn u v w i a b.
+move => (* leqrn *) u v w i a b.
 rewrite -[_ + _](row_id 0); move/row_eq=> uvw.
 move/row'_eq=> vu; move/row'_eq=> wu.
 rewrite !big_distrr -big_split; apply: eq_bigr => s sR /=.
@@ -1635,7 +1635,7 @@ Admitted.
 
 
 
-Lemma alternate_form_of_multilinear_alternate r (x : exterior) :
+Lemma alternate_form_of_multilinear_alternate r (x : exterior) : (* r <= n -> *)
   alternate (form_of_ext x : r.-form).
 Proof.
 Admitted.
@@ -1645,8 +1645,8 @@ Admitted.
 Lemma form_of_multilinear_alternate r (x : exterior) :
   multilinear_alternate (form_of_ext x : r.-form).
 Proof.
-by move : 
-multilinear_form_of_multilinear_alternate 
+by move :
+multilinear_form_of_multilinear_alternate
 alternate_form_of_multilinear_alternate.
 Qed.
 
