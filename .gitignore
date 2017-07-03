@@ -1,6 +1,9 @@
 #Le Dossier qui contient des bouquins
 /Doc
 
+#Un vol honteux des rapports de l'équipe pour m'en inspirer, mais chut ....
+/Reports
+
 #Les fichiers générés par le Makefile ou par emacs
 *~
 *.aux
