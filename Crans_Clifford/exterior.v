@@ -7,6 +7,9 @@ From mathcomp
 Require Import matrix mxalgebra tuple mxpoly zmodp binomial.
 From mathcomp
 Require Import perm finset path fingroup.
+From CoqEAL
+Require Import minor.
+
 
 (** **********************************************************************************
     *******************                                *******************************
