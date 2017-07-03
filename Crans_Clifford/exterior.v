@@ -1631,7 +1631,7 @@ move/row'_eq=> vu; move/row'_eq=> wu.
 rewrite !big_distrr -big_split; apply: eq_bigr => s sR /=.
 rewrite (mulrCA a) (mulrCA b) -mulrDr; congr ( _ * _).
 have rewr :   a * (\prod_(i0 < r) to_ext (row i0 v)) 0 (enum_rank s) +
-  b * (\prod_(i0 < r) to_ext (row i0 w)) 0 (enum_rank s) =   
+  b * (\prod_(i0 < r) to_ext (row i0 w)) 0 (enum_rank s) =
   (a *: \prod_(i0 < r) to_ext (row i0 v) +
   b *: \prod_(i0 < r) to_ext (row i0 w)) 0 (enum_rank s); last first.
 
