@@ -592,7 +592,8 @@ Section Exterior.
 Section ExteriorDef.
 
 Variable (F : fieldType).
-Variable (n : nat).
+Variable (n' : nat).
+Notation n := n'.+1.
 
 Let dim  := #|{set 'I_n}|.
 
