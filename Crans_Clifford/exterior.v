@@ -1509,9 +1509,13 @@ Definition ext_of_form r (f : r.-form) : exterior :=
 
 
 (* Alternative definition *)
-(* Definition form_of_ext2 r (u : exterior) : r.-form := fun v => *)
-(*    \sum_(s : {set 'I_n} | #|s| == r) *)
-(*       u 0 (enum_rank s) * (\det (\matrix_(i < r, j \in S) (to_ext (row i v)) 0 j)). *)
+
+
+
+Definition form_of_ext2 r (u : exterior) : r.-form := fun v =>
+   \sum_(s : {set 'I_n} | #|s| == r)
+      u 0 (enum_rank s) * (@minor _ _ _ r (fun i => i) (fun j => nth ord0 (exterior_enum s) j) v).
+
 
 
 
