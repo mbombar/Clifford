@@ -1656,18 +1656,35 @@ Admitted.
 (* by congr (_ * _ + _ * _); apply: eq_bigr => i i0i; rewrite ?BA ?CA. *)
 (* Qed. *)
 
-(* Lemma determinant_alternate n (A : 'M[R]_n) i1 i2 : *)
-(*   i1 != i2 -> A i1 =1 A i2 -> \det A = 0. *)
-(* Proof. *)
-(* move=> neq_i12 eqA12; pose t := tperm i1 i2. *)
-(* have oddMt s: (t * s)%g = ~~ s :> bool by rewrite odd_permM odd_tperm neq_i12. *)
-(* rewrite [\det A](bigID (@odd_perm _)) /=. *)
-(* apply: canLR (subrK _) _; rewrite add0r -sumrN. *)
-(* rewrite (reindex_inj (mulgI t)); apply: eq_big => //= s. *)
-(* rewrite oddMt => /negPf->; rewrite mulN1r mul1r; congr (- _). *)
-(* rewrite (reindex_inj (@perm_inj _ t)); apply: eq_bigr => /= i _. *)
-(* by rewrite permM tpermK /t; case: tpermP => // ->; rewrite eqA12. *)
-(* Qed. *)
+
+Lemma rowK_sub  T (p q : nat) (M : 'M[T]_(p,q)) f g k : 
+row k (\matrix_(i<p,j<q) M (f i) (g j)) = \row_j (M (f k) (g j)).
+Proof. by apply /rowP=> j; rewrite !mxE. Qed.
+
+Lemma rowK_sub_hinc T (p : nat) (M : 'M[T]_(p,n)) k (S : {set 'I_n}) : 
+row k (\matrix_(i<p,j<n) M i (nth ord0 (exterior_enum S) j)) = \row_j (M k (nth ord0 (exterior_enum S) j)).
+Proof. by rewrite rowK_sub. Qed.
+
+
+
+Lemma row_scale (R : comRingType) (a : R) (p q : nat) (M : 'M[R]_(p,q)) i : 
+  a *: row i M = row i (a *: M). 
+Proof. by rewrite !rowE scalemxAr. Qed.
+
+Lemma row_add (R : comRingType) (p q : nat) (M N : 'M[R]_(p,q)) i :
+  row i M + row i N = row i (M + N). 
+Proof. by rewrite !rowE mulmxDr. Qed.
+
+
+Lemma submatrix_scale (R : ringType) (a : R) m n p k (M : 'M[R]_(m,n))
+  (f : 'I_p -> 'I_m) (g : 'I_k -> 'I_n) :
+  a *: submatrix f g M = submatrix f g (a *: M).
+Proof. by rewrite /submatrix; apply/matrixP=> i j; rewrite !mxE. Qed.
+
+Lemma submatrix_add  (R : ringType) m n p k (M N : 'M[R]_(m,n))
+  (f : 'I_p -> 'I_m) (g : 'I_k -> 'I_n) :
+  (submatrix f g M) + (submatrix f g N) = submatrix f g (M + N).
+Proof. by rewrite /submatrix; apply /matrixP=> i j; rewrite !mxE. Qed.
 
 
 
