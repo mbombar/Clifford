@@ -1592,6 +1592,54 @@ Admitted.
 
 
 
+
+Lemma ext_of_formK2 r (f : r.-form) : multilinear_alternate f ->
+  form_of_ext2 (ext_of_form f) =1 f.
+Proof.
+move=> f_ma v.
+have f_m : multilinear f. exact : (proj1 f_ma).
+have f_a : alternate f. exact : (proj2 f_ma).
+rewrite /form_of_ext2 /ext_of_form.
+Admitted.
+
+Lemma form_of_extK2 r (u : exterior) :  u = \sum_(s : {set 'I_n} | #|s| == r) u 0 (enum_rank s) *: (blade s)
+ -> ext_of_form (@form_of_ext2 r u) = u.
+Proof.
+move => uinextr.
+rewrite /ext_of_form (* /form_of_ext2 *) [in RHS]uinextr.
+apply: eq_bigr=> s sr; congr ( _ *: _ ).
+rewrite /form_of_ext2.
+rewrite (bigD1 s) //=.
+rewrite big1 ?addr0.
+have minor1 :  minor id (fun j : 'I_r => nth ord0 (exterior_enum s) j)
+    (\matrix_i [seq 'e_i0 | i0 <- exterior_enum s]`_i) = 1; last first.
+  - by rewrite minor1 mulr1.
+
+move=> ?.
+
+(* expand_det_(row || col) *)
+admit.
+
+
+move=> A /andP Ar_neqs.
+have Ar : (#|A| == r). exact : (proj1 Ar_neqs).
+have A_neqs : A != s.  exact : (proj2 Ar_neqs).
+
+have minor0 B :  B != s -> minor id (fun j : 'I_r => nth ord0 (exterior_enum B) j)
+    (\matrix_i [seq 'e_i0 | i0 <- exterior_enum s]`_i) = 0; last first.
+by rewrite minor0 ?mulr0.
+
+
+move=> Bneqs.
+
+(* expand_det_(row || col) *)
+admit.
+
+ 
+
+Admitted.
+
+
 (* (* The theory of determinants *) *)
 
 (* Lemma determinant_multilinear n (A B C : 'M[R]_n) i0 b c : *)
