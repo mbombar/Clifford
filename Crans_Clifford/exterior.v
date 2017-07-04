@@ -1687,25 +1687,57 @@ Lemma submatrix_add  (R : ringType) m n p k (M N : 'M[R]_(m,n))
 Proof. by rewrite /submatrix; apply /matrixP=> i j; rewrite !mxE. Qed.
 
 
+Lemma multilinear_form2_of_multilinear_altertate r (x : exterior) : 
+  multilinear (form_of_ext2 x : r.-form).
+Proof.
+move=> U V W i0 b c.
+rewrite !row_scale row_add; move/row_eq=> uvw.
+move/row'_eq=> vu; move/row'_eq=> wu.
+rewrite !big_distrr -big_split; apply: eq_bigr => s sR /=.
+rewrite (mulrCA b) (mulrCA c) -mulrDr; congr (_ * _).
+rewrite /minor. 
+set A := submatrix id (fun j : 'I_r => nth ord0 (exterior_enum s) j) U.
+set B := submatrix id (fun j : 'I_r => nth ord0 (exterior_enum s) j) V.
+set C := submatrix id (fun j : 'I_r => nth ord0 (exterior_enum s) j) W.
+rewrite (@determinant_multilinear _ _ A B C i0 b c) //.
+
+have rowK_sub_hinc_U : row i0 (\matrix_(i, j) U i (nth ord0 (exterior_enum s) j)) = \row_j (U i0 (nth ord0 (exterior_enum s) j)).
+ - admit.
+
+have rowK_sub_hinc_VW : row i0 (\matrix_(i, j) (b *: V + c *: W) i (nth ord0 (exterior_enum s) j)) = \row_j ((b*: V + c *: W) i0 (nth ord0 (exterior_enum s) j)).
+ - admit.
+
+
+rewrite !row_scale !row_add !submatrix_scale submatrix_add. 
+rewrite rowK_sub_hinc_U rowK_sub_hinc_VW.
+apply/rowP=> j; rewrite !mxE.
+by rewrite uvw !mxE.
+
+by apply/matrixP=> i j; rewrite !mxE vu // inE eq_sym neq_lift.
+by apply/matrixP=> i j; rewrite !mxE wu // inE eq_sym neq_lift.
+
+Admitted.
+
+
 
 Lemma multilinear_form_of_multilinear_alternate r (x : exterior) :
   (* r <= n -> *) multilinear (form_of_ext x : r.-form).
 Proof.
-move => (* leqrn *) u v w i a b.
+move => (* leqrn *) U V W i a b.
 rewrite -[_ + _](row_id 0); move/row_eq=> uvw.
 move/row'_eq=> vu; move/row'_eq=> wu.
 rewrite !big_distrr -big_split; apply: eq_bigr => s sR /=.
 rewrite (mulrCA a) (mulrCA b) -mulrDr; congr ( _ * _).
-have rewr :   a * (\prod_(i0 < r) to_ext (row i0 v)) 0 (enum_rank s) +
-  b * (\prod_(i0 < r) to_ext (row i0 w)) 0 (enum_rank s) =
-  (a *: \prod_(i0 < r) to_ext (row i0 v) +
-  b *: \prod_(i0 < r) to_ext (row i0 w)) 0 (enum_rank s); last first.
+have rewr :   a * (\prod_(i0 < r) to_ext (row i0 V)) 0 (enum_rank s) +
+  b * (\prod_(i0 < r) to_ext (row i0 W)) 0 (enum_rank s) =
+  (a *: \prod_(i0 < r) to_ext (row i0 V) +
+  b *: \prod_(i0 < r) to_ext (row i0 W)) 0 (enum_rank s); last first.
 
 rewrite rewr.
 
 
 
-have eq_prod : \prod_(i0 < r) to_ext (row i0 u) = a *: \prod_(i0 < r) to_ext (row i0 v) + b *: \prod_(i0 < r) to_ext (row i0 w); last first.
+have eq_prod : \prod_(i0 < r) to_ext (row i0 U) = a *: \prod_(i0 < r) to_ext (row i0 V) + b *: \prod_(i0 < r) to_ext (row i0 W); last first.
 
 by rewrite eq_prod.
 
@@ -1721,6 +1753,39 @@ Admitted.
 
 
 
+
+
+
+(* Lemma determinant_alternate n (A : 'M[R]_n) i1 i2 : *)
+(*   i1 != i2 -> A i1 =1 A i2 -> \det A = 0. *)
+(* Proof. *)
+(* move=> neq_i12 eqA12; pose t := tperm i1 i2. *)
+(* have oddMt s: (t * s)%g = ~~ s :> bool by rewrite odd_permM odd_tperm neq_i12. *)
+(* rewrite [\det A](bigID (@odd_perm _)) /=. *)
+(* apply: canLR (subrK _) _; rewrite add0r -sumrN. *)
+(* rewrite (reindex_inj (mulgI t)); apply: eq_big => //= s. *)
+(* rewrite oddMt => /negPf->; rewrite mulN1r mul1r; congr (- _). *)
+(* rewrite (reindex_inj (@perm_inj _ t)); apply: eq_bigr => /= i _. *)
+(* by rewrite permM tpermK /t; case: tpermP => // ->; rewrite eqA12. *)
+(* Qed. *)
+
+
+
+
+Lemma alternate_form2_of_multilinear_alternate r (x : exterior) : 
+alternate (form_of_ext2 x : r.-form).
+Proof.
+move=> A i1 i2 neq_i12 eqA12.
+rewrite /form_of_ext2.
+rewrite big1 //.
+move=> s sr.
+have min0 : minor id (fun j : 'I_r => (exterior_enum s)`_j) A = 0; last first.
+by rewrite min0 ?mulr0.
+rewrite /minor.
+rewrite (@determinant_alternate _ _ _ i1 i2) //.
+by move=> j1; rewrite !mxE eqA12.
+Qed.
+
 Lemma alternate_form_of_multilinear_alternate r (x : exterior) : (* r <= n -> *)
   alternate (form_of_ext x : r.-form).
 Proof.
@@ -1735,6 +1800,17 @@ by move :
 multilinear_form_of_multilinear_alternate
 alternate_form_of_multilinear_alternate.
 Qed.
+
+Lemma form_of2_multilinear_alternate r (x : exterior) :
+  multilinear_alternate (form_of_ext2 x : r.-form).
+Proof.
+by move :
+multilinear_form2_of_multilinear_altertate
+alternate_form2_of_multilinear_alternate.
+Qed.
+
+
+
 
 Lemma mul_ext_form r s (f : r.-form) (g : s.-form) :
   multilinear_alternate f -> multilinear_alternate g ->
