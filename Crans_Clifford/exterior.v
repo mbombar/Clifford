@@ -1413,6 +1413,7 @@ Qed.
 Definition extn r : 'M[F]_dim :=
  (\sum_(s : {set 'I_n} | #|s| == r) <<blade s>>)%MS.
 
+
 (* Notation "'Λ_r" := (extn r) (only parsing): type_scope. *)
 
 Lemma dim_extn r : \rank (extn r) = 'C(n, r).
@@ -1514,7 +1515,7 @@ Definition ext_of_form r (f : r.-form) : exterior :=
 
 Definition form_of_ext2 r (u : exterior) : r.-form := fun v =>
    \sum_(s : {set 'I_n} | #|s| == r)
-      u 0 (enum_rank s) * (@minor _ _ _ r (fun i => i) (fun j => nth ord0 (exterior_enum s) j) v).
+      u 0 (enum_rank s) * (@minor _ _ _ r (fun i => i) (fun j => nth 0 (exterior_enum s) j) v).
 
 
 
