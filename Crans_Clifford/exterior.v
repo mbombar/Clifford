@@ -1558,6 +1558,8 @@ Qed.
 Definition mul_form r s (a : r.-form) (b : s.-form) : (r+s).-form :=
 form_of_ext ( (ext_of_form a) * (ext_of_form b)).
 
+Definition mul_form2 r s (a : r.-form) (b : s.-form) : (r+s).-form :=
+  form_of_ext2 ( (ext_of_form a) * (ext_of_form b) ).
 
 Definition multilinear r (f : r.-form) :=
    forall (A B C : 'M_(r,n)) (i0 : 'I_r) (b c : F),
@@ -1688,7 +1690,7 @@ Proof. by rewrite /submatrix; apply /matrixP=> i j; rewrite !mxE. Qed.
 
 
 Lemma multilinear_form2_of_multilinear_altertate r (x : exterior) : 
-  multilinear (form_of_ext2 x : r.-form).
+  multilinear (@form_of_ext2 r x).
 Proof.
 move=> U V W i0 b c.
 rewrite !row_scale row_add; move/row_eq=> uvw.
@@ -1772,7 +1774,7 @@ Admitted.
 
 
 Lemma alternate_form2_of_multilinear_alternate r (x : exterior) : 
-alternate (form_of_ext2 x : r.-form).
+alternate (@form_of_ext2 r x).
 Proof.
 move=> A i1 i2 neq_i12 eqA12.
 rewrite /form_of_ext2.
@@ -1801,7 +1803,7 @@ alternate_form_of_multilinear_alternate.
 Qed.
 
 Lemma form_of2_multilinear_alternate r (x : exterior) :
-  multilinear_alternate (form_of_ext2 x : r.-form).
+  multilinear_alternate (@form_of_ext2 r x).
 Proof.
 by move :
 multilinear_form2_of_multilinear_altertate
