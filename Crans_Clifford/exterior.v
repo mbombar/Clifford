@@ -1386,6 +1386,11 @@ Lemma extnP {u : exterior} {r} :
           (u <= extn r)%MS.
 
 Proof.
+apply : (iffP idP) => [u_inextn | u_sumr]; last first.
+ - rewrite u_sumr summx_sub //; move=> s sr.
+   by rewrite scalemx_sub ?(@sumsmx_sup _ _ s) ?genmxE.
+move : u_inextn.
+rewrite [LHS]ext_sum_blade /extn.
 Admitted.
 
 
