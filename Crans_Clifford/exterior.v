@@ -593,7 +593,7 @@ Section ExteriorDef.
 
 Variable (F : fieldType).
 Variable (n' : nat).
-Notation n := n'.+1.
+Let n := n'.+1.
 
 Let dim  := #|{set 'I_n}|.
 
@@ -766,7 +766,7 @@ Definition blade A : exterior := (delta_mx 0 (enum_rank A)).
 Definition to_ext (x : 'rV_n) : exterior :=
   \sum_(i : 'I_n) (x 0 i) *: blade [set i].
 
-Local Notation "x %:ext" := (to_ext x) (format "x %:ext", at level 40).
+Local Notation "x %:ext" := (to_ext x) (format "x %:ext", at level 2).
 
 Lemma to_ext_add (x y : 'rV_n) : x%:ext + y%:ext = (x + y)%:ext.
 Proof.
@@ -1221,18 +1221,16 @@ rewrite [in LHS]mul_ext_suml.
 apply: eq_bigr => R _.
 rewrite [in LHS]mul_ext_suml.
 apply: eq_bigr => S _.
-by rewrite -scaleextAl
--(scaleextAr (v``_(enum_rank S))) scalerA
--scaleextAl -scaleextAr scalerA.
-move => R _.
+  rewrite -scaleextAl -(scaleextAr (v``_(enum_rank S))) scalerA.
+  by rewrite -scaleextAl -scaleextAr scalerA.
+move=> R _.
 rewrite [in LHS]mul_ext_sumr.
 apply: eq_bigr => S _.
 rewrite [in LHS]mul_ext_sumr.
 apply: eq_bigr => T _.
-by rewrite -scaleextAl
--(scaleextAl (v``_(enum_rank S)))
--(scaleextAr (w``_(enum_rank T))) scalerA
--(scaleextAr (v``_(enum_rank S) * w``_(enum_rank T))) scalerA mulrA.
+rewrite -scaleextAl -(scaleextAl (v``_(enum_rank S))).
+rewrite -(scaleextAr (w``_(enum_rank T))) scalerA.
+by rewrite -(scaleextAr (v``_(enum_rank S) * w``_(enum_rank T))) scalerA mulrA.
 Qed.
 
 
@@ -1263,6 +1261,9 @@ End ExteriorRing.
 
 Delimit Scope ext_scope with ext.
 Local Open Scope ext_scope.
+
+Notation "x %:ext" := (to_ext x) (format "x %:ext", at level 2) : ext_scope.
+
 (* Local Notation "\prod_ ( i | P ) B" := *)
 (*   (\big[mul_ext/id_ext]_(i | P) B%ext) : ext_scope. *)
 (* Local Notation "\prod_ ( i < n | P ) B" := *)
@@ -1307,58 +1308,29 @@ Proof. by rewrite mulNr !mul_blades sign_single scaleNr setUC. Qed.
 
 (** Only true for vectors from the original vector space *)
 
-Lemma mulxx0 (x : 'rV_n) : (x%:ext) ^+ 2 = 0.
+Lemma mulxx0 (x : 'rV_n) : x%:ext ^+ 2 = 0.
 Proof.
-rewrite /to_ext expr2.
-rewrite big_distrlr //=.
+rewrite /to_ext expr2 big_distrlr //=.
 rewrite (eq_bigr (fun (i : 'I_n) =>
-\sum_(j<n | j<i)x``_i*x``_j*:((blade [set i])*(blade [set j])) + \sum_(j<n | j>i)x``_i*x``_j*:((blade [set i])*(blade [set j])))).
-rewrite big_split /=.
-rewrite [X in _ + X](exchange_big_dep predT) //=.
-rewrite -big_split /=.
-rewrite big1 //=.
-
-move=> i _; rewrite -big_split big1 //=.
-
-move=> j _; rewrite mulrC -scalerDr [X in _ + X]mul_bladeNC.
-
-rewrite -[X in X + _]add0r.
-rewrite mulNr addrK.
-rewrite scaler0 //=.
-
-
+  \sum_(j < n | j < i) x``_i * x``_j *: (blade [set i] * blade [set j]) +
+  \sum_(j < n | j > i) x``_i * x``_j *: (blade [set i] * blade [set j]))).
+rewrite big_split /= [X in _ + X](exchange_big_dep predT) //=.
+rewrite -big_split /= big1 //=.
+  move=> i _; rewrite -big_split big1 //=.
+  move=> j _; rewrite mulrC -scalerDr [X in _ + X]mul_bladeNC.
+  by rewrite -[X in X + _]add0r mulNr addrK scaler0.
 move=> i _; rewrite (bigD1 i) //=.
 rewrite -scalerAl -scalerAr mul_bladexx0 !scaler0 add0r.
-move : neq_ltn => neq_ltn.
-
-have jltni a b : (a != b) && (a < b) = (a < b).
-by rewrite ltn_neqAle Bool.andb_assoc Bool.andb_diag.
-
-rewrite (bigID (fun (j : 'I_n) => (j<i))) //=.
-have p1 : (fun j =>  (j != i) && (j < i)) =1 (fun j => j < i).
-  by move=> j; rewrite jltni.
-
-rewrite (eq_bigl _ _ p1).
-
-have p2 : (fun j =>  (j != i) && ~~(j < i)) =1 (fun j => j > i).
-move=> j.
-rewrite -leqNgt leq_eqVlt Bool.andb_orb_distrib_r andbC eq_sym.
-by rewrite Bool.andb_negb_r orFb eq_sym jltni.
-
-rewrite (eq_bigl _ _ p2).
-
-rewrite -!bigU /=.
-apply : eq_bigr => j _.
-by rewrite -scalerAr -scalerAl scalerA mulrC.
-
-
-by rewrite disjoint_subset; apply /subsetP => j;
-rewrite !inE !unfold_in eqnE -leqNgt; apply leq_trans.
-
-
-by rewrite disjoint_subset; apply /subsetP => j;
-rewrite !inE !unfold_in eqnE -leqNgt; apply leq_trans.
-
+rewrite (bigID (fun (j : 'I_n) => (j < i))) //=.
+rewrite (eq_bigl (fun j : 'I__ => j < i)); last first.
+  by move=> j; rewrite -val_eqE /=; case: ltngtP.
+rewrite [X in _ + X](eq_bigl (fun j : 'I__ => i < j)); last first.
+  by move=> j; rewrite -val_eqE /=; case: ltngtP.
+move=> [: disj_lelt]; rewrite -!bigU /=; last 2 first.
+- abstract: disj_lelt; rewrite disjoint_subset; apply /subsetP => j;
+  by rewrite !inE !unfold_in eqnE -leqNgt; apply: leq_trans.
+- by apply: disj_lelt.
+by apply : eq_bigr => j _; rewrite -scalerAr -scalerAl scalerA mulrC.
 Qed.
 
 (* rewrite eq_bigr. *)
@@ -1394,28 +1366,25 @@ Qed.
 Lemma sqextrD (u v : exterior) : (u + v)^+2 = u^+2 + u*v + v*u + v^+2.
 Proof. by rewrite expr2 mulrDl !mulrDr addrA -!expr2. Qed.
 
-
-
-
 (** Probleme de typage ? zmodtype ?? *)
-Lemma mul_extNC (x y : 'rV_n) : (to_ext x) * (to_ext y) = - (to_ext y) * (to_ext x).
+Lemma mul_extNC (x y : 'rV_n) : x%:ext * y%:ext = - y%:ext * x%:ext.
 Proof.
 rewrite mulNr.
-have : ((x%:ext) + (y%:ext))^+2 = 0.
+have: (x%:ext + y%:ext)^+2 = 0.
   by rewrite expr2 to_ext_add -expr2 mulxx0.
 rewrite sqextrD !mulxx0 addr0 add0r.
-move => /eqP H.
-by apply/eqP; rewrite -addr_eq0.
+by move=> /eqP; rewrite addr_eq0 => /eqP->.
 Qed.
 
 
 (** r-th exterior power *)
 Definition extn r : 'M[F]_dim :=
- (\sum_(s : {set 'I_n} | #|s| == r) <<blade s>>)%MS.
+  (\sum_(s : {set 'I_n} | #|s| == r) <<blade s>>)%MS.
 
+Lemma extnP {u : exterior} {r} :
+  reflect (u = \sum_(s : {set 'I_n} | #|s| == r) (u 0 (enum_rank s) *: (blade s)))
+          (u <= extn r)%MS.
 
-Lemma in_extn (u : exterior) r :
-  (u <= extn r)%MS = (u == \sum_(s : {set 'I_n} | #|s| == r) (u 0 (enum_rank s) *: (blade s))).
 Proof.
 Admitted.
 
@@ -1510,7 +1479,7 @@ Definition form_of_ext r (u : exterior) : r.-form := fun v =>
 
 Definition ext_of_form r (f : r.-form) : exterior :=
   \sum_(s : {set 'I_n} | #|s| == r)
-   f (\matrix_(i < r) nth 0 [seq delta_mx 0 i | i <- exterior_enum s] i) *: blade s.
+   f (\matrix_(i < r) [seq 'e_i | i <- exterior_enum s]`_i) *: blade s.
 
 
 
@@ -1521,7 +1490,7 @@ Definition ext_of_form r (f : r.-form) : exterior :=
 
 Definition form_of_ext2 r (u : exterior) : r.-form := fun v =>
    \sum_(s : {set 'I_n} | #|s| == r)
-      u 0 (enum_rank s) * (@minor _ _ _ r (fun i => i) (fun j => nth 0 (exterior_enum s) j) v).
+      u 0 (enum_rank s) * (minor id (fun j => nth 0 (exterior_enum s) j) v).
 
 
 
@@ -1614,20 +1583,17 @@ Lemma form_of_extK2 r (u : exterior) :  (* u = \sum_(s : {set 'I_n} | #|s| == r)
 (u <= extn r)%MS
  -> ext_of_form (@form_of_ext2 r u) = u.
 Proof.
-rewrite in_extn; move => /eqP uinextr.
+move=> /extnP uinextr.
 rewrite /ext_of_form (* /form_of_ext2 *) [in RHS]uinextr.
 apply: eq_bigr=> s sr; congr ( _ *: _ ).
 rewrite /form_of_ext2.
 rewrite (bigD1 s) //=.
 rewrite big1 ?addr0.
-have minor1 :  minor id (fun j : 'I_r => nth ord0 (exterior_enum s) j)
-    (\matrix_i [seq 'e_i0 | i0 <- exterior_enum s]`_i) = 1; last first.
+have minor1 : minor id (fun j : 'I_r => nth ord0 (exterior_enum s) j)
+    (\matrix_i [seq 'e_i0 | i0 <- exterior_enum s]`_i : 'M[F]__) = 1; last first.
   - by rewrite minor1 mulr1.
-
-move=> ?.
-
-(* expand_det_(row || col) *)
-admit.
+  (* expand_det_(row || col) *)
+  admit.
 
 
 move=> A /andP Ar_neqs.
@@ -1644,7 +1610,7 @@ move=> Bneqs.
 (* expand_det_(row || col) *)
 admit.
 
- 
+
 
 Admitted.
 
@@ -1666,37 +1632,25 @@ Admitted.
 (* Qed. *)
 
 
-Lemma rowK_sub  T (p q : nat) (M : 'M[T]_(p,q)) f g k : 
-row k (\matrix_(i<p,j<q) M (f i) (g j)) = \row_j (M (f k) (g j)).
+Lemma rowK_sub  T (p' q' p q : nat) (M : 'M[T]_(p, q)) f g k:
+  row k (\matrix_(i < p', j < q') M (f i) (g j)) = \row_j (M (f k) (g j)).
 Proof. by apply /rowP=> j; rewrite !mxE. Qed.
 
-Lemma rowK_sub_hinc T (p : nat) (M : 'M[T]_(p,n)) k (S : {set 'I_n}) : 
-row k (\matrix_(i<p,j<n) M i (nth ord0 (exterior_enum S) j)) = \row_j (M k (nth ord0 (exterior_enum S) j)).
+Lemma rowK_sub_hinc T (p : nat) (M : 'M[T]_(p, n)) k (S : {set 'I_n}) :
+  row k (\matrix_(i < p, j < n) M i (nth ord0 (exterior_enum S) j)) =
+  \row_j (M k (nth ord0 (exterior_enum S) j)).
 Proof. by rewrite rowK_sub. Qed.
 
-
-
-Lemma row_scale (R : comRingType) (a : R) (p q : nat) (M : 'M[R]_(p,q)) i : 
-  a *: row i M = row i (a *: M). 
+Lemma row_scale (R : comRingType) (a : R) (p q : nat) (M : 'M[R]_(p,q)) i :
+  a *: row i M = row i (a *: M).
 Proof. by rewrite !rowE scalemxAr. Qed.
 
 Lemma row_add (R : comRingType) (p q : nat) (M N : 'M[R]_(p,q)) i :
-  row i M + row i N = row i (M + N). 
+  row i M + row i N = row i (M + N).
 Proof. by rewrite !rowE mulmxDr. Qed.
 
 
-Lemma submatrix_scale (R : ringType) (a : R) m n p k (M : 'M[R]_(m,n))
-  (f : 'I_p -> 'I_m) (g : 'I_k -> 'I_n) :
-  a *: submatrix f g M = submatrix f g (a *: M).
-Proof. by rewrite /submatrix; apply/matrixP=> i j; rewrite !mxE. Qed.
-
-Lemma submatrix_add  (R : ringType) m n p k (M N : 'M[R]_(m,n))
-  (f : 'I_p -> 'I_m) (g : 'I_k -> 'I_n) :
-  (submatrix f g M) + (submatrix f g N) = submatrix f g (M + N).
-Proof. by rewrite /submatrix; apply /matrixP=> i j; rewrite !mxE. Qed.
-
-
-Lemma multilinear_form2_of_multilinear_altertate r (x : exterior) : 
+Lemma multilinear_form_of_ext2 r (x : exterior) :
   multilinear (@form_of_ext2 r x).
 Proof.
 move=> U V W i0 b c.
@@ -1704,31 +1658,19 @@ rewrite !row_scale row_add; move/row_eq=> uvw.
 move/row'_eq=> vu; move/row'_eq=> wu.
 rewrite !big_distrr -big_split; apply: eq_bigr => s sR /=.
 rewrite (mulrCA b) (mulrCA c) -mulrDr; congr (_ * _).
-rewrite /minor. 
-set A := submatrix id (fun j : 'I_r => nth ord0 (exterior_enum s) j) U.
-set B := submatrix id (fun j : 'I_r => nth ord0 (exterior_enum s) j) V.
-set C := submatrix id (fun j : 'I_r => nth ord0 (exterior_enum s) j) W.
-rewrite (@determinant_multilinear _ _ A B C i0 b c) //.
-
-have rowK_sub_hinc_U : row i0 (\matrix_(i, j) U i (nth ord0 (exterior_enum s) j)) = \row_j (U i0 (nth ord0 (exterior_enum s) j)).
- - by move=> n; apply /rowP=> i; rewrite !mxE.
-
-have rowK_sub_hinc_VW : row i0 (\matrix_(i, j) (b *: V + c *: W) i (nth ord0 (exterior_enum s) j)) = \row_j ((b*: V + c *: W) i0 (nth ord0 (exterior_enum s) j)).
- - by move=> n; apply /rowP=> i; rewrite !mxE.
-
-
-rewrite !row_scale !row_add !submatrix_scale submatrix_add. 
-rewrite rowK_sub_hinc_U rowK_sub_hinc_VW.
-apply/rowP=> j; rewrite !mxE.
-by rewrite uvw !mxE.
-
-by apply/matrixP=> i j; rewrite !mxE vu // inE eq_sym neq_lift.
-by apply/matrixP=> i j; rewrite !mxE wu // inE eq_sym neq_lift.
+pose exterior_mat X : 'M[F]_(r, r) :=
+   submatrix id (fun j : 'I_r => nth ord0 (exterior_enum s) j) X.
+set A := exterior_mat U; set B := exterior_mat V; set C := exterior_mat W.
+(* set A := submatrix _ _ U; set B := submatrix _ _ V; set C := submatrix _ _ W. *)
+rewrite [LHS](@determinant_multilinear _ _ A B C i0 b c) //; do ?[
+  by apply/matrixP=> i j; rewrite !mxE (vu, wu) // inE eq_sym neq_lift].
+rewrite !row_scale !row_add -!submatrix_scale -submatrix_add !rowK_sub.
+by apply/rowP=> j; rewrite !mxE uvw !mxE.
 Qed.
 
 
 
-Lemma multilinear_form_of_multilinear_alternate r (x : exterior) :
+Lemma multilinear_form_of_ext r (x : exterior) :
   (* r <= n -> *) multilinear (form_of_ext x : r.-form).
 Proof.
 move => (* leqrn *) U V W i a b.
@@ -1780,21 +1722,20 @@ Admitted.
 
 
 
-Lemma alternate_form2_of_multilinear_alternate r (x : exterior) : 
-alternate (@form_of_ext2 r x).
+Lemma alternate_form_of_ext2 r (x : exterior) : alternate (@form_of_ext2 r x).
 Proof.
 move=> A i1 i2 neq_i12 eqA12.
 rewrite /form_of_ext2.
 rewrite big1 //.
 move=> s sr.
 have min0 : minor id (fun j : 'I_r => (exterior_enum s)`_j) A = 0; last first.
-by rewrite min0 ?mulr0.
+  by rewrite min0 ?mulr0.
 rewrite /minor.
 rewrite (@determinant_alternate _ _ _ i1 i2) //.
 by move=> j1; rewrite !mxE eqA12.
 Qed.
 
-Lemma alternate_form_of_multilinear_alternate r (x : exterior) : (* r <= n -> *)
+Lemma alternate_form_of_ext r (x : exterior) : (* r <= n -> *)
   alternate (form_of_ext x : r.-form).
 Proof.
 Admitted.
@@ -1805,19 +1746,17 @@ Lemma form_of_multilinear_alternate r (x : exterior) :
   multilinear_alternate (form_of_ext x : r.-form).
 Proof.
 by move :
-multilinear_form_of_multilinear_alternate
-alternate_form_of_multilinear_alternate.
+multilinear_form_of_ext
+alternate_form_of_ext.
 Qed.
 
 Lemma form_of2_multilinear_alternate r (x : exterior) :
   multilinear_alternate (@form_of_ext2 r x).
 Proof.
 by move :
-multilinear_form2_of_multilinear_altertate
-alternate_form2_of_multilinear_alternate.
+multilinear_form_of_ext2
+alternate_form_of_ext2.
 Qed.
-
-
 
 Lemma multilinear_alternate_mul_form2 r s (f : r.-form) (g : s.-form) :
   multilinear_alternate (mul_form2 f g).
