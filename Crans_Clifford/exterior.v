@@ -643,21 +643,24 @@ About uniq.
 
 
 (** useful for non commutative product *)
-Definition sign (A B : {set 'I_n}) : F :=
+Definition sign2 (A B : {set 'I_n}) : F :=
   delta F (exterior_enum A ++ exterior_enum B) (exterior_enum (A :|: B)).
 
-Lemma sign0S1 (S : {set 'I_n}) : sign set0 S = 1.
+
+
+Lemma sign20S1 (S : {set 'I_n}) : sign2 set0 S = 1.
 Proof.
-rewrite /sign set0U exterior_enum_set0 cat0s.
+rewrite /sign2 set0U exterior_enum_set0 cat0s.
 by rewrite deltaii ?exterior_enum_uniq.
 Qed.
 
-Lemma signS01 (S : {set 'I_n}) : sign S set0 = 1.
+
+
+Lemma sign2S01 (S : {set 'I_n}) : sign2 S set0 = 1.
 Proof.
-rewrite /sign setU0 exterior_enum_set0 cats0.
+rewrite /sign2 setU0 exterior_enum_set0 cats0.
 by rewrite deltaii ?exterior_enum_uniq.
 Qed.
-
 
 
 (** Idea : ~~[disjoint A & B] = ~~ (uniq ( exterior_enum A ++ exterior_enum B ) ) *)
@@ -672,15 +675,64 @@ by have := AB x; rewrite !inE !mem_sort !mem_enum; apply.
 Qed.
 
 
-(* Lemma disjointC (A B : {set 'I_n}) : [disjoint A & B] = [disjoint B & A]. *)
-(* Proof. by rewrite -setI_eq0 setIC setI_eq0. Qed. *)
-
-
 Lemma exterior_enum_disjoint (A B : {set 'I_n}) :
     [disjoint A & B] = uniq ( exterior_enum A ++ exterior_enum B).
 Proof.
 rewrite disjoint_sym cat_uniq !exterior_enum_uniq andbT //=.
 by rewrite disjoint_seq disjoint_has. Qed.
+
+
+
+Lemma sign2ND (A B : {set 'I_n}) : ~~ [disjoint A & B] -> sign2 A B = 0.
+Proof.
+rewrite exterior_enum_disjoint => ND.
+by rewrite /sign2 delta_0 //= ND.
+Qed.
+
+
+
+Lemma sign2Dl (R S T : {set 'I_n}) : [disjoint R & S] -> sign2 (R :|: S) T = (sign2 R T)*(sign2 S T).
+Proof.
+move => dRS; rewrite /sign2.
+Admitted.
+
+
+
+Lemma sign2ii (i : 'I_n) : sign2 [set i] [set i] = 0.
+Proof.
+by rewrite sign2ND //= -setI_eq0 setIid; apply /set0Pn; exists i; rewrite set11.
+Qed.
+
+
+Lemma sign_single (i j : 'I_n) : sign2 [set j] [set i] = - sign2 [set i] [set j].
+Proof.
+have [->| neq_ij] := eqVneq i j; first by rewrite sign2ii oppr0.
+rewrite /sign2 /exterior_enum !enum_set1 setUC.
+rewrite delta_catC.
+- by rewrite !size_sort muln1 expr1 mulN1r.
+- by rewrite sort_uniq enum_uniq.
+rewrite -![sort _ [::_]]/[:: _] perm_eq_sym perm_sort.
+rewrite uniq_perm_eq ?enum_uniq //= ?inE 1?eq_sym ?neq_ij //.
+by move=> x; rewrite !mem_enum !inE orbC.
+Qed.
+
+
+Definition sigma (i j : 'I_n) : F := if i == j then 0 else (if i > j then 1 else -1).
+
+Definition sign (A B : {set 'I_n}) : F :=
+  \prod_(i in A) \prod_(j in B) sigma i j.
+
+Lemma sign0S1 (S : {set 'I_n}) : sign set0 S = 1.
+Proof. by rewrite /sign big_pred0; last  by move=> ?; rewrite in_set0. Qed.
+
+Lemma signS01 (S : {set 'I_n}) : sign S set0 = 1.
+Proof. 
+by rewrite /sign exchange_big big_pred0; last by move=> ?; rewrite in_set0. 
+Qed.
+
+(* Lemma disjointC (A B : {set 'I_n}) : [disjoint A & B] = [disjoint B & A]. *)
+(* Proof. by rewrite -setI_eq0 setIC setI_eq0. Qed. *)
+
 
 (* Search _ (mem _ _ = mem ).
 Search _ "mem" "C".
@@ -692,40 +744,52 @@ Admitted.
 
 Lemma signND (A B : {set 'I_n}) : ~~ [disjoint A & B] -> sign A B = 0.
 Proof.
-rewrite exterior_enum_disjoint => ND.
-by rewrite /sign delta_0 //= ND.
-Qed.
-
+rewrite -setI_eq0.
+move : set_0Vmem => set_0Vmem.
+have : (set_0Vmem _ (A :&: B)); last first.
+rewrite -card_gt0.
+move=> ND.
+rewrite /sign.
+Admitted.
 
 Lemma signDl (R S T : {set 'I_n}) : [disjoint R & S] -> sign (R :|: S) T = (sign R T)*(sign S T).
 Proof.
 move => dRS; rewrite /sign.
-Admitted.
+rewrite (eq_bigl (fun i => i \in [predU R & S])); last by move=> ?; rewrite !inE.
+by rewrite bigU //=.
+Qed.
+
 
 Lemma signDr (R S T : {set 'I_n}) : [disjoint S & T] -> sign R (S :|: T) = (sign R S)*(sign R T).
-Admitted.
-
-
-
-
+Proof.
+move=> dST; rewrite /sign -big_split; apply : eq_bigr=> i _.
+rewrite (eq_bigl (fun j=> j \in [predU S & T])); last by move=> ?; rewrite !inE.
+by rewrite bigU.
+Qed.
 
 Lemma signii (i : 'I_n) : sign [set i] [set i] = 0.
 Proof.
-by rewrite signND //= -setI_eq0 setIid; apply /set0Pn; exists i; rewrite set11.
+rewrite /sign !big_set1.
+by rewrite /sigma eq_refl.
 Qed.
 
 
-Lemma sign_single (i j : 'I_n) : sign [set j] [set i] = - sign [set i] [set j].
+Lemma signC (i j : 'I_n) : sign [set j] [set i] = - sign [set i] [set j].
 Proof.
 have [->| neq_ij] := eqVneq i j; first by rewrite signii oppr0.
-rewrite /sign /exterior_enum !enum_set1 setUC.
-rewrite delta_catC.
-- by rewrite !size_sort muln1 expr1 mulN1r.
-- by rewrite sort_uniq enum_uniq.
-rewrite -![sort _ [::_]]/[:: _] perm_eq_sym perm_sort.
-rewrite uniq_perm_eq ?enum_uniq //= ?inE 1?eq_sym ?neq_ij //.
-by move=> x; rewrite !mem_enum !inE orbC.
-Qed.
+rewrite /sign !big_set1.
+move : neq_ij; rewrite -val_eqE.
+case : ltngtP.
+rewrite //=.
+move=> ltn_ij _.
+move : ltn_ij.
+rewrite /sigma.
+(* rewrite [LHS]gtn_eqF. *)
+
+
+(* move : neq_ij; rewrite neq_ltn. *)
+Admitted.
+
 
 (*
 Search _ (_^~ _ = _ ^~ _).
@@ -1302,7 +1366,7 @@ Proof. by rewrite -mulextE -mul_blade_ext /mul_blade signii scale0r. Qed.
 
 Lemma mul_bladeNC (i j : 'I_n) :
   (blade [set i])*(blade [set j]) = - (blade [set j])*(blade [set i]).
-Proof. by rewrite mulNr !mul_blades sign_single scaleNr setUC. Qed.
+Proof. by rewrite mulNr !mul_blades signC scaleNr setUC. Qed.
 
 
 
@@ -1803,8 +1867,3 @@ Admitted.
 End Form.
 
 End ExteriorDef.
-
-
-(* Section Duality *)
-
-(* End Duality *)
