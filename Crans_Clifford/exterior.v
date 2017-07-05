@@ -1702,10 +1702,10 @@ set C := submatrix id (fun j : 'I_r => nth ord0 (exterior_enum s) j) W.
 rewrite (@determinant_multilinear _ _ A B C i0 b c) //.
 
 have rowK_sub_hinc_U : row i0 (\matrix_(i, j) U i (nth ord0 (exterior_enum s) j)) = \row_j (U i0 (nth ord0 (exterior_enum s) j)).
- - admit.
+ - by move=> n; apply /rowP=> i; rewrite !mxE.
 
 have rowK_sub_hinc_VW : row i0 (\matrix_(i, j) (b *: V + c *: W) i (nth ord0 (exterior_enum s) j)) = \row_j ((b*: V + c *: W) i0 (nth ord0 (exterior_enum s) j)).
- - admit.
+ - by move=> n; apply /rowP=> i; rewrite !mxE.
 
 
 rewrite !row_scale !row_add !submatrix_scale submatrix_add. 
@@ -1715,8 +1715,7 @@ by rewrite uvw !mxE.
 
 by apply/matrixP=> i j; rewrite !mxE vu // inE eq_sym neq_lift.
 by apply/matrixP=> i j; rewrite !mxE wu // inE eq_sym neq_lift.
-
-Admitted.
+Qed.
 
 
 
