@@ -1812,6 +1812,10 @@ Qed.
 
 
 
+Lemma multilinear_alternate_mul_form2 r s (f : r.-form) (g : s.-form) :
+  multilinear_alternate (mul_form2 f g).
+Proof. exact: form_of2_multilinear_alternate. Qed.
+
 
 Lemma mul_ext_form r s (f : r.-form) (g : s.-form) :
   multilinear_alternate f -> multilinear_alternate g ->
