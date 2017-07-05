@@ -1414,6 +1414,12 @@ Definition extn r : 'M[F]_dim :=
  (\sum_(s : {set 'I_n} | #|s| == r) <<blade s>>)%MS.
 
 
+Lemma in_extn (u : exterior) r :
+  (u <= extn r)%MS = (u == \sum_(s : {set 'I_n} | #|s| == r) (u 0 (enum_rank s) *: (blade s))).
+Proof.
+Admitted.
+
+
 (* Notation "'Λ_r" := (extn r) (only parsing): type_scope. *)
 
 Lemma dim_extn r : \rank (extn r) = 'C(n, r).
@@ -1604,10 +1610,11 @@ have f_a : alternate f. exact : (proj2 f_ma).
 rewrite /form_of_ext2 /ext_of_form.
 Admitted.
 
-Lemma form_of_extK2 r (u : exterior) :  u = \sum_(s : {set 'I_n} | #|s| == r) u 0 (enum_rank s) *: (blade s)
+Lemma form_of_extK2 r (u : exterior) :  (* u = \sum_(s : {set 'I_n} | #|s| == r) u 0 (enum_rank s) *: (blade s) *)
+(u <= extn r)%MS
  -> ext_of_form (@form_of_ext2 r u) = u.
 Proof.
-move => uinextr.
+rewrite in_extn; move => /eqP uinextr.
 rewrite /ext_of_form (* /form_of_ext2 *) [in RHS]uinextr.
 apply: eq_bigr=> s sr; congr ( _ *: _ ).
 rewrite /form_of_ext2.
@@ -1823,6 +1830,17 @@ Lemma mul_ext_form r s (f : r.-form) (g : s.-form) :
 Proof.
 move=> f_ma g_ma; rewrite /mul_form.
 Abort.
+
+
+
+Lemma mul_ext_form2 r s (f : r.-form) (g : s.-form) :
+  ext_of_form (mul_form2 f g) =1 (ext_of_form f) * (ext_of_form g).
+Proof.
+rewrite /mul_form2.
+rewrite form_of_extK2 //.
+Admitted.
+
+
 
 (* Definition split_form r (I : {set 'I_r}) (f : r.-form) *)
 (*            (v : 'M_(r - #|I|,n)) : #|I|.-form := fun u => *)
