@@ -1450,70 +1450,6 @@ Notation "r .-form" := (form_of r)
 
 (* Definition canon_tuple (s : {set 'I_n}) := Tuple (size_exterior_enum s). *)
 
-
-(* ~ scalar product *)
-Definition form_of_ext r (u : exterior) : r.-form := fun v =>
-  \sum_(s : {set 'I_n} | #|s| == r)
-     u 0 (enum_rank s) * (\prod_i to_ext (row i v)) 0 (enum_rank s).
-
-Definition ext_of_form r (f : r.-form) : exterior :=
-  \sum_(s : {set 'I_n} | #|s| == r)
-   f (\matrix_(i < r) [seq 'e_i | i <- exterior_enum s]`_i) *: blade s.
-
-
-
-
-(* Alternative definition *)
-
-
-
-Definition form_of_ext2 r (u : exterior) : r.-form := fun v =>
-   \sum_(s : {set 'I_n} | #|s| == r)
-      u 0 (enum_rank s) * (minor id (fun j => nth 0 (exterior_enum s) j) v).
-
-
-
-
-
-Definition null_form r : r.-form := form_of_ext 0.
-
-
-Lemma null_form0 r v : @null_form r v = 0.
-Proof.
-rewrite /null_form /form_of_ext.
-by apply : big1 => s _; rewrite ext0 mul0r.
-Qed.
-
-
-Lemma ext_of_form0 r (f : r.-form) : (r > n)%N -> ext_of_form f = 0.
-Proof.
-move => leqnr; rewrite /ext_of_form.
-apply: big_pred0 => s.
-have card_small (A : {set 'I_n}) : (#|A| <= n)%N.
-  by rewrite (leq_trans (max_card _)) ?card_ord.
-have card_ler (A : {set 'I_n}) : (#|A| < r)%N.
-  by move : (card_small A) leqnr; apply : leq_ltn_trans.
-by move: (card_ler s); apply: ltn_eqF.
-Qed.
-
-
-Lemma form_of_ext0 r (u : exterior) : (r > n)%N -> form_of_ext u =1 (@null_form r).
-Proof.
-move=> leqnr v; rewrite null_form0 /form_of_ext.
-apply: big_pred0 => s.
-have card_small (A : {set 'I_n}) : (#|A| <= n)%N.
-  by rewrite (leq_trans (max_card _)) ?card_ord.
-have card_ler (A : {set 'I_n}) : (#|A| < r)%N.
-  by move : (card_small A) leqnr; apply : leq_ltn_trans.
-by move: (card_ler s); apply: ltn_eqF.
-Qed.
-
-Definition mul_form r s (a : r.-form) (b : s.-form) : (r + s).-form :=
-form_of_ext (ext_of_form a * ext_of_form b).
-
-Definition mul_form2 r s (a : r.-form) (b : s.-form) : (r + s).-form :=
-  form_of_ext2 (ext_of_form a * ext_of_form b).
-
 Definition multilinear r (f : r.-form) :=
    forall (A B C : 'M_(r,n)) (i0 : 'I_r) (b c : F),
    row i0 A = b *: row i0 B + c *: row i0 C ->
@@ -1527,7 +1463,21 @@ Definition multilinear_alternate r (f : r.-form) :=
   multilinear f /\ alternate f.
 
 
-(* Lemma, the set of all alternating multilinear forms is a  vector space (as the sum of two such maps or the product with a scalar is again alternating *)
+
+Section form_of1.
+
+(* ~ scalar product *)
+Definition form_of_ext r (u : exterior) : r.-form := fun v =>
+  \sum_(s : {set 'I_n} | #|s| == r)
+     u 0 (enum_rank s) * (\prod_i to_ext (row i v)) 0 (enum_rank s).
+
+Definition ext_of_form r (f : r.-form) : exterior :=
+  \sum_(s : {set 'I_n} | #|s| == r)
+   f (\matrix_(i < r) [seq 'e_i | i <- exterior_enum s]`_i) *: blade s.
+
+
+Definition mul_form r s (a : r.-form) (b : s.-form) : (r + s).-form :=
+form_of_ext (ext_of_form a * ext_of_form b).
 
 
 Lemma ext_of_formK r (f : r.-form) : multilinear_alternate f ->
@@ -1547,6 +1497,121 @@ Admitted.
 
 
 
+Lemma multilinear_form_of_ext r (x : exterior) :
+  (* r <= n -> *) multilinear (form_of_ext x : r.-form).
+Proof.
+move => (* leqrn *) U V W i a b.
+rewrite -[_ + _](row_id 0); move/row_eq=> uvw.
+move/row'_eq=> vu; move/row'_eq=> wu.
+rewrite !big_distrr -big_split; apply: eq_bigr => s sR /=.
+rewrite (mulrCA a) (mulrCA b) -mulrDr; congr ( _ * _).
+have rewr :   a * (\prod_(i0 < r) to_ext (row i0 V)) 0 (enum_rank s) +
+  b * (\prod_(i0 < r) to_ext (row i0 W)) 0 (enum_rank s) =
+  (a *: \prod_(i0 < r) to_ext (row i0 V) +
+  b *: \prod_(i0 < r) to_ext (row i0 W)) 0 (enum_rank s); last first.
+
+rewrite rewr.
+
+
+
+have eq_prod : \prod_(i0 < r) to_ext (row i0 U) = a *: \prod_(i0 < r) to_ext (row i0 V) + b *: \prod_(i0 < r) to_ext (row i0 W); last first.
+
+by rewrite eq_prod.
+
+
+(* have prod_cat1 : \prod_(i0 < r) to_ext (row i0 u) = (\prod_(i0 < i) to_ext (row i0 u))*(\prod_(i <= i0 < r) to_ext (row i0 u)). *)
+
+
+
+(* rewrite [in RHS]summxE. *)
+(* rewrite (@big_cat_nat _ _ _ i 0 r). *)
+Admitted.
+
+Lemma alternate_form_of_ext r (x : exterior) : (* r <= n -> *)
+  alternate (form_of_ext x : r.-form).
+Proof.
+Admitted.
+
+
+
+Lemma form_of_multilinear_alternate r (x : exterior) :
+  multilinear_alternate (form_of_ext x : r.-form).
+Proof.
+by move :
+multilinear_form_of_ext
+alternate_form_of_ext.
+Qed.
+
+Lemma mul_ext_form r s (f : r.-form) (g : s.-form) :
+  multilinear_alternate f -> multilinear_alternate g ->
+  ext_of_form (mul_form f g) =1 (ext_of_form f) * (ext_of_form g).
+Proof.
+move=> f_ma g_ma; rewrite /mul_form.
+Abort.
+
+End form_of1.
+
+
+(* Alternative definition *)
+Section form_of2.
+
+(* Definition form_of_ext r (u : exterior) : r.-form := fun v => *)
+(*   \sum_(s : {set 'I_n} | #|s| == r) *)
+(*      u 0 (enum_rank s) * (\prod_i to_ext (row i v)) 0 (enum_rank s). *)
+
+Definition form_of_ext2 r (u : exterior) : r.-form := fun v =>
+   \sum_(s : {set 'I_n} | #|s| == r)
+      u 0 (enum_rank s) * (minor id (fun j => nth 0 (exterior_enum s) j) v).
+
+
+Definition mul_form2 r s (a : r.-form) (b : s.-form) : (r + s).-form :=
+  form_of_ext2 (ext_of_form a * ext_of_form b).
+
+
+End form_of2.
+
+Section null_form.
+
+Definition null_form r : r.-form := fun _ => 0.
+
+Lemma null_form0 r v : @null_form r v = 0.
+Proof. by []. Qed.
+
+Lemma null_form_ext r : @form_of_ext2 r 0 =1 @null_form r.
+Proof.
+move=> v; rewrite /form_of_ext2 /null_form.
+by apply: big1=> s  _; rewrite ext0 mul0r.
+Qed.
+
+Lemma null_ext_form r : ext_of_form (@null_form r) = 0.
+Proof.
+apply/rowP=> i; rewrite /ext_of_form /null_form summxE mxE.
+by apply: big1=> s _; rewrite mxE mul0r.
+Qed.
+
+Lemma ext_of_form0 r (f : r.-form) : (r > n)%N -> ext_of_form f = 0.
+Proof.
+move => leqnr; rewrite /ext_of_form.
+apply: big_pred0 => s.
+have card_small (A : {set 'I_n}) : (#|A| <= n)%N.
+  by rewrite (leq_trans (max_card _)) ?card_ord.
+have card_ler (A : {set 'I_n}) : (#|A| < r)%N.
+  by move : (card_small A) leqnr; apply : leq_ltn_trans.
+by move: (card_ler s); apply: ltn_eqF.
+Qed.
+
+Lemma form_of_ext0 r (u : exterior) : (r > n)%N -> form_of_ext u =1 (@null_form r).
+Proof.
+move=> leqnr v; rewrite null_form0 /form_of_ext.
+apply: big_pred0 => s.
+have card_small (A : {set 'I_n}) : (#|A| <= n)%N.
+  by rewrite (leq_trans (max_card _)) ?card_ord.
+have card_ler (A : {set 'I_n}) : (#|A| < r)%N.
+  by move : (card_small A) leqnr; apply : leq_ltn_trans.
+by move: (card_ler s); apply: ltn_eqF.
+Qed.
+
+End null_form.
 
 Lemma ext_of_formK2 r (f : r.-form) : multilinear_alternate f ->
   form_of_ext2 (ext_of_form f) =1 f.
@@ -1556,23 +1621,6 @@ have f_m : multilinear f. exact : (proj1 f_ma).
 have f_a : alternate f. exact : (proj2 f_ma).
 rewrite /form_of_ext2 /ext_of_form.
 Admitted.
-
-
-(* (* The theory of determinants *) *)
-
-(* Lemma determinant_multilinear n (A B C : 'M[R]_n) i0 b c : *)
-(*     row i0 A = b *: row i0 B + c *: row i0 C -> *)
-(*     row' i0 B = row' i0 A -> *)
-(*     row' i0 C = row' i0 A -> *)
-(*   \det A = b * \det B + c * \det C. *)
-(* Proof. *)
-(* rewrite -[_ + _](row_id 0); move/row_eq=> ABC. *)
-(* move/row'_eq=> BA; move/row'_eq=> CA. *)
-(* rewrite !big_distrr -big_split; apply: eq_bigr => s _ /=. *)
-(* rewrite -!(mulrCA (_ ^+s)) -mulrDr; congr (_ * _). *)
-(* rewrite !(bigD1 i0 (_ : predT i0)) //= {}ABC !mxE mulrDl !mulrA. *)
-(* by congr (_ * _ + _ * _); apply: eq_bigr => i i0i; rewrite ?BA ?CA. *)
-(* Qed. *)
 
 
 Lemma rowK_sub  T (p' q' p q : nat) (M : 'M[T]_(p, q)) f g k:
@@ -1611,60 +1659,6 @@ rewrite !row_scale !row_add -!submatrix_scale -submatrix_add !rowK_sub.
 by apply/rowP=> j; rewrite !mxE uvw !mxE.
 Qed.
 
-
-
-Lemma multilinear_form_of_ext r (x : exterior) :
-  (* r <= n -> *) multilinear (form_of_ext x : r.-form).
-Proof.
-move => (* leqrn *) U V W i a b.
-rewrite -[_ + _](row_id 0); move/row_eq=> uvw.
-move/row'_eq=> vu; move/row'_eq=> wu.
-rewrite !big_distrr -big_split; apply: eq_bigr => s sR /=.
-rewrite (mulrCA a) (mulrCA b) -mulrDr; congr ( _ * _).
-have rewr :   a * (\prod_(i0 < r) to_ext (row i0 V)) 0 (enum_rank s) +
-  b * (\prod_(i0 < r) to_ext (row i0 W)) 0 (enum_rank s) =
-  (a *: \prod_(i0 < r) to_ext (row i0 V) +
-  b *: \prod_(i0 < r) to_ext (row i0 W)) 0 (enum_rank s); last first.
-
-rewrite rewr.
-
-
-
-have eq_prod : \prod_(i0 < r) to_ext (row i0 U) = a *: \prod_(i0 < r) to_ext (row i0 V) + b *: \prod_(i0 < r) to_ext (row i0 W); last first.
-
-by rewrite eq_prod.
-
-
-(* have prod_cat1 : \prod_(i0 < r) to_ext (row i0 u) = (\prod_(i0 < i) to_ext (row i0 u))*(\prod_(i <= i0 < r) to_ext (row i0 u)). *)
-
-
-
-(* rewrite [in RHS]summxE. *)
-(* rewrite (@big_cat_nat _ _ _ i 0 r). *)
-Admitted.
-
-
-
-
-
-
-
-(* Lemma determinant_alternate n (A : 'M[R]_n) i1 i2 : *)
-(*   i1 != i2 -> A i1 =1 A i2 -> \det A = 0. *)
-(* Proof. *)
-(* move=> neq_i12 eqA12; pose t := tperm i1 i2. *)
-(* have oddMt s: (t * s)%g = ~~ s :> bool by rewrite odd_permM odd_tperm neq_i12. *)
-(* rewrite [\det A](bigID (@odd_perm _)) /=. *)
-(* apply: canLR (subrK _) _; rewrite add0r -sumrN. *)
-(* rewrite (reindex_inj (mulgI t)); apply: eq_big => //= s. *)
-(* rewrite oddMt => /negPf->; rewrite mulN1r mul1r; congr (- _). *)
-(* rewrite (reindex_inj (@perm_inj _ t)); apply: eq_bigr => /= i _. *)
-(* by rewrite permM tpermK /t; case: tpermP => // ->; rewrite eqA12. *)
-(* Qed. *)
-
-
-
-
 Lemma alternate_form_of_ext2 r (x : exterior) : alternate (@form_of_ext2 r x).
 Proof.
 move=> A i1 i2 neq_i12 eqA12.
@@ -1676,21 +1670,6 @@ have min0 : minor id (fun j : 'I_r => (exterior_enum s)`_j) A = 0; last first.
 rewrite /minor.
 rewrite (@determinant_alternate _ _ _ i1 i2) //.
 by move=> j1; rewrite !mxE eqA12.
-Qed.
-
-Lemma alternate_form_of_ext r (x : exterior) : (* r <= n -> *)
-  alternate (form_of_ext x : r.-form).
-Proof.
-Admitted.
-
-
-
-Lemma form_of_multilinear_alternate r (x : exterior) :
-  multilinear_alternate (form_of_ext x : r.-form).
-Proof.
-by move :
-multilinear_form_of_ext
-alternate_form_of_ext.
 Qed.
 
 Lemma form_of2_multilinear_alternate r (x : exterior) :
@@ -1705,15 +1684,6 @@ Lemma multilinear_alternate_mul_form2 r s (f : r.-form) (g : s.-form) :
   multilinear_alternate (mul_form2 f g).
 Proof. exact: form_of2_multilinear_alternate. Qed.
 
-
-Lemma mul_ext_form r s (f : r.-form) (g : s.-form) :
-  multilinear_alternate f -> multilinear_alternate g ->
-  ext_of_form (mul_form f g) =1 (ext_of_form f) * (ext_of_form g).
-Proof.
-move=> f_ma g_ma; rewrite /mul_form.
-Abort.
-
-
 End Form.
 
 End ExteriorDef.
@@ -1725,7 +1695,7 @@ Notation "r .-form[ F ^ n ]" := (form_of F n r)
 
 Arguments blade {F n'}.
 
-Section FormField.
+Section ExteriorField.
 
 Variable (F : fieldType).
 Variable (n' : nat).
@@ -1738,21 +1708,24 @@ Definition extn r : 'M[F]_dim :=
   (\sum_(s : {set 'I_n} | #|s| == r) <<blade s>>)%MS.
 
 Lemma extnP {u : exterior F n'} {r} :
-  reflect (u = \sum_(s : {set 'I_n} | #|s| == r) (u 0 (enum_rank s) *: (blade s)))
+  reflect (u = \sum_(s : {set 'I_n} | #|s| == r) (u 0 (enum_rank s) *: blade s))
           (u <= extn r)%MS.
 
 Proof.
-apply : (iffP idP) => [u_inextn | u_sumr]; last first.
+(* apply : (iffP sub_sumsmxP). *)
+(* move=> [C defu]. *)
+
+apply : (iffP idP) => [ | u_sumr]; last first.
  - rewrite u_sumr summx_sub //; move=> s sr.
    by rewrite scalemx_sub ?(@sumsmx_sup _ _ s) ?genmxE.
-move : u_inextn.
-rewrite [LHS]ext_sum_blade /extn.
+rewrite /extn.
+rewrite [X in (X <= _)%MS](ext_sum_blade u) /=.
+
+(* rewrite (bigID (fun s => #|s| == r)). *)
 Admitted.
 
 
-
 (* Notation "'Λ_r" := (extn r) (only parsing): type_scope. *)
-
 Lemma dim_extn r : \rank (extn r) = 'C(n, r).
 Proof.
 rewrite (mxdirectP _) /=; last first.
@@ -1770,14 +1743,7 @@ by rewrite card_powerset cardsT card_ord.
 Qed.
 
 
-(*
-Variable r : nat.
-*)
-
-
-
 (** The exterior algebra is the direct sum of the i-th exterior power as modules *)
-
 Lemma mxdirect_extn : mxdirect (\sum_(i < n.+1) extn i).
 Proof.
 have card_small (A : {set 'I_n}) : (#|A| < n.+1)%N.
@@ -1798,12 +1764,6 @@ apply/eqP/eq_bigr => i _; rewrite (eq_bigr (fun=> 1%N)); last first.
   by move=> A _; rewrite mxrank_gen mxrank_delta.
 by rewrite sum1dep_card /= card_draws card_ord !exp1n !muln1.
 Qed.
-
-(* Lemma mul_extnV (u v : exterior) r s : (u <= extn r)%MS -> (v <= extn s)%MS -> *)
-(*   (u *w v)  = 0. *)
-
-(** Universal Property ? *)
-
 
 Lemma form_of_extK2 r (u : exterior F n') :  (* u = \sum_(s : {set 'I_n} | #|s| == r) u 0 (enum_rank s) *: (blade s) *)
 (u <= extn r)%MS
@@ -1841,7 +1801,6 @@ admit.
 Admitted.
 
 
-
 Lemma mul_ext_form2 r s (f : r.-form[F ^ n']) (g : s.-form[F ^ n']) :
   ext_of_form (mul_form2 f g) =1 (ext_of_form f) * (ext_of_form g).
 Proof.
@@ -1863,5 +1822,5 @@ Admitted.
 (*   k0 f v. *)
 
 
-End FormField.
+End ExteriorField.
 End Exterior.
