@@ -11,6 +11,9 @@ From CoqEAL
 Require Import minor.
 
 
+Require Import aux.
+
+
 (** **********************************************************************************
     *******************                                *******************************
     *******************    Beginning of exterior.v     *******************************
@@ -21,7 +24,7 @@ Require Import minor.
 
 
 
-From mathcomp Require Import aux.
+
 
 
 Set Implicit Arguments.
