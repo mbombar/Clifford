@@ -6,7 +6,7 @@ Require Import bigop ssralg ssrint div rat poly closed_field polyrcf.
 From mathcomp
 Require Import matrix mxalgebra tuple mxpoly zmodp binomial.
 From mathcomp
-Require Import perm finset path fingroup.
+Require Import perm finset path fingroup ssrnum.
 From CoqEAL
 Require Import minor.
 
@@ -29,9 +29,11 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 Import GRing.Theory.
+Import Num.Theory.
 
 Local Open Scope ring_scope.
-
+Delimit Scope ext_scope with ext.
+Local Open Scope ext_scope.
 Section delta.
 
 Import GroupScope.
@@ -591,7 +593,7 @@ Section Exterior.
 
 Section ExteriorDef.
 
-Variable (F : fieldType).
+Variable (F : comRingType).
 Variable (n' : nat).
 Let n := n'.+1.
 
@@ -1323,10 +1325,6 @@ Lemma id_extE : id_ext = 1. Proof. by []. Qed.
 
 End ExteriorRing.
 
-Delimit Scope ext_scope with ext.
-Local Open Scope ext_scope.
-
-Notation "x %:ext" := (to_ext x) (format "x %:ext", at level 2) : ext_scope.
 
 (* Local Notation "\prod_ ( i | P ) B" := *)
 (*   (\big[mul_ext/id_ext]_(i | P) B%ext) : ext_scope. *)
@@ -1441,75 +1439,6 @@ by move=> /eqP; rewrite addr_eq0 => /eqP->.
 Qed.
 
 
-(** r-th exterior power *)
-Definition extn r : 'M[F]_dim :=
-  (\sum_(s : {set 'I_n} | #|s| == r) <<blade s>>)%MS.
-
-Lemma extnP {u : exterior} {r} :
-  reflect (u = \sum_(s : {set 'I_n} | #|s| == r) (u 0 (enum_rank s) *: (blade s)))
-          (u <= extn r)%MS.
-
-Proof.
-apply : (iffP idP) => [u_inextn | u_sumr]; last first.
- - rewrite u_sumr summx_sub //; move=> s sr.
-   by rewrite scalemx_sub ?(@sumsmx_sup _ _ s) ?genmxE.
-move : u_inextn.
-rewrite [LHS]ext_sum_blade /extn.
-Admitted.
-
-
-(* Notation "'Λ_r" := (extn r) (only parsing): type_scope. *)
-
-Lemma dim_extn r : \rank (extn r) = 'C(n, r).
-Proof.
-rewrite (mxdirectP _) /=; last first.
-   by rewrite mxdirect_delta // => i ???; apply: enum_rank_inj.
-rewrite (eq_bigr (fun=> 1%N)); last first.
-  by move=> s _; rewrite mxrank_gen mxrank_delta.
-by rewrite sum1dep_card card_draws card_ord.
-Qed.
-
-Lemma dim_exterior : \rank (1%:M : 'M[F]_dim) = (2 ^ n)%N.
-Proof.
-rewrite mxrank1 /dim (@eq_card _ _ (mem (powerset [set: 'I_n]))); last first.
-  by move=> A; rewrite !inE subsetT.
-by rewrite card_powerset cardsT card_ord.
-Qed.
-
-
-(*
-Variable r : nat.
-*)
-
-
-
-(** The exterior algebra is the direct sum of the i-th exterior power as modules *)
-
-Lemma mxdirect_extn : mxdirect (\sum_(i < n.+1) extn i).
-Proof.
-have card_small (A : {set 'I_n}) : (#|A| < n.+1)%N.
-  by rewrite ltnS (leq_trans (max_card _)) ?card_ord.
-apply/mxdirectP=> /=; rewrite -(@partition_big _ _ _ _ _ xpredT
-          (fun A => Ordinal (card_small A)) xpredT) //=.
-rewrite (mxdirectP _) ?mxdirect_delta //=; last by move=> ????/enum_rank_inj.
-by rewrite (@partition_big _ _ _ _ _ xpredT
-          (fun A => Ordinal (card_small A)) xpredT) //=.
-Qed.
-
-
-Lemma extnn : (\sum_(i < n.+1) extn i :=: 1%:M)%MS.
-Proof.
-apply/eqmxP; rewrite -mxrank_leqif_eq ?submx1 // dim_exterior /extn.
-rewrite (expnDn 1 1) (mxdirectP _) /=; last exact mxdirect_extn.
-apply/eqP/eq_bigr => i _; rewrite (eq_bigr (fun=> 1%N)); last first.
-  by move=> A _; rewrite mxrank_gen mxrank_delta.
-by rewrite sum1dep_card /= card_draws card_ord !exp1n !muln1.
-Qed.
-
-(* Lemma mul_extnV (u v : exterior) r s : (u <= extn r)%MS -> (v <= extn s)%MS -> *)
-(*   (u *w v)  = 0. *)
-
-(** Universal Property ? *)
 
 
 End ExteriorAlgebra.
@@ -1518,8 +1447,6 @@ End ExteriorAlgebra.
 Section Form.
 
 Definition form_of r := 'M[F]_(r,n) -> F.
-
-
 
 Notation "r .-form" := (form_of r)
   (at level 2, format "r .-form") : type_scope.
@@ -1565,7 +1492,7 @@ Definition form_of_ext2 r (u : exterior) : r.-form := fun v =>
 
 
 
-Definition null_form r : r.-form := (form_of_ext 0).
+Definition null_form r : r.-form := form_of_ext 0.
 
 
 Lemma null_form0 r v : @null_form r v = 0.
@@ -1575,7 +1502,7 @@ by apply : big1 => s _; rewrite ext0 mul0r.
 Qed.
 
 
-Lemma ext_of_form0 r (f : r.-form) : r > n -> (ext_of_form f) = 0.
+Lemma ext_of_form0 r (f : r.-form) : (r > n)%N -> ext_of_form f = 0.
 Proof.
 move => leqnr; rewrite /ext_of_form.
 apply: big_pred0 => s.
@@ -1587,11 +1514,10 @@ by move: (card_ler s); apply: ltn_eqF.
 Qed.
 
 
-Lemma form_of_ext0 r (u : exterior) : r > n -> form_of_ext u =1 (@null_form r).
+Lemma form_of_ext0 r (u : exterior) : (r > n)%N -> form_of_ext u =1 (@null_form r).
 Proof.
 move=> leqnr v; rewrite null_form0 /form_of_ext.
 apply: big_pred0 => s.
-
 have card_small (A : {set 'I_n}) : (#|A| <= n)%N.
   by rewrite (leq_trans (max_card _)) ?card_ord.
 have card_ler (A : {set 'I_n}) : (#|A| < r)%N.
@@ -1599,11 +1525,11 @@ have card_ler (A : {set 'I_n}) : (#|A| < r)%N.
 by move: (card_ler s); apply: ltn_eqF.
 Qed.
 
-Definition mul_form r s (a : r.-form) (b : s.-form) : (r+s).-form :=
-form_of_ext ( (ext_of_form a) * (ext_of_form b)).
+Definition mul_form r s (a : r.-form) (b : s.-form) : (r + s).-form :=
+form_of_ext (ext_of_form a * ext_of_form b).
 
-Definition mul_form2 r s (a : r.-form) (b : s.-form) : (r+s).-form :=
-  form_of_ext2 ( (ext_of_form a) * (ext_of_form b) ).
+Definition mul_form2 r s (a : r.-form) (b : s.-form) : (r + s).-form :=
+  form_of_ext2 (ext_of_form a * ext_of_form b).
 
 Definition multilinear r (f : r.-form) :=
    forall (A B C : 'M_(r,n)) (i0 : 'I_r) (b c : F),
@@ -1646,41 +1572,6 @@ move=> f_ma v.
 have f_m : multilinear f. exact : (proj1 f_ma).
 have f_a : alternate f. exact : (proj2 f_ma).
 rewrite /form_of_ext2 /ext_of_form.
-Admitted.
-
-Lemma form_of_extK2 r (u : exterior) :  (* u = \sum_(s : {set 'I_n} | #|s| == r) u 0 (enum_rank s) *: (blade s) *)
-(u <= extn r)%MS
- -> ext_of_form (@form_of_ext2 r u) = u.
-Proof.
-move=> /extnP uinextr.
-rewrite /ext_of_form (* /form_of_ext2 *) [in RHS]uinextr.
-apply: eq_bigr=> s sr; congr ( _ *: _ ).
-rewrite /form_of_ext2.
-rewrite (bigD1 s) //=.
-rewrite big1 ?addr0.
-have minor1 : minor id (fun j : 'I_r => nth ord0 (exterior_enum s) j)
-    (\matrix_i [seq 'e_i0 | i0 <- exterior_enum s]`_i : 'M[F]__) = 1; last first.
-  - by rewrite minor1 mulr1.
-  (* expand_det_(row || col) *)
-  admit.
-
-
-move=> A /andP Ar_neqs.
-have Ar : (#|A| == r). exact : (proj1 Ar_neqs).
-have A_neqs : A != s.  exact : (proj2 Ar_neqs).
-
-have minor0 B :  B != s -> minor id (fun j : 'I_r => nth ord0 (exterior_enum B) j)
-    (\matrix_i [seq 'e_i0 | i0 <- exterior_enum s]`_i) = 0; last first.
-by rewrite minor0 ?mulr0.
-
-
-move=> Bneqs.
-
-(* expand_det_(row || col) *)
-admit.
-
-
-
 Admitted.
 
 
@@ -1840,8 +1731,129 @@ move=> f_ma g_ma; rewrite /mul_form.
 Abort.
 
 
+End Form.
 
-Lemma mul_ext_form2 r s (f : r.-form) (g : s.-form) :
+End ExteriorDef.
+
+Notation "x %:ext" := (to_ext x) (format "x %:ext", at level 2) : ext_scope.
+Notation "r .-form[ F ^ n ]" := (form_of F n r)
+  (at level 2, F at level 0, n at next level,
+   format "r .-form[ F ^ n ]") : type_scope.
+
+Arguments blade {F n'}.
+
+Section FormField.
+
+Variable (F : fieldType).
+Variable (n' : nat).
+Let n := n'.+1.
+
+Let dim  := #|{set 'I_n}|.
+
+(** r-th exterior power *)
+Definition extn r : 'M[F]_dim :=
+  (\sum_(s : {set 'I_n} | #|s| == r) <<blade s>>)%MS.
+
+Lemma extnP {u : exterior F n'} {r} :
+  reflect (u = \sum_(s : {set 'I_n} | #|s| == r) (u 0 (enum_rank s) *: (blade s)))
+          (u <= extn r)%MS.
+
+Proof.
+Admitted.
+
+
+(* Notation "'Λ_r" := (extn r) (only parsing): type_scope. *)
+
+Lemma dim_extn r : \rank (extn r) = 'C(n, r).
+Proof.
+rewrite (mxdirectP _) /=; last first.
+   by rewrite mxdirect_delta // => i ???; apply: enum_rank_inj.
+rewrite (eq_bigr (fun=> 1%N)); last first.
+  by move=> s _; rewrite mxrank_gen mxrank_delta.
+by rewrite sum1dep_card card_draws card_ord.
+Qed.
+
+Lemma dim_exterior : \rank (1%:M : 'M[F]_dim) = (2 ^ n)%N.
+Proof.
+rewrite mxrank1 /dim (@eq_card _ _ (mem (powerset [set: 'I_n]))); last first.
+  by move=> A; rewrite !inE subsetT.
+by rewrite card_powerset cardsT card_ord.
+Qed.
+
+
+(*
+Variable r : nat.
+*)
+
+
+
+(** The exterior algebra is the direct sum of the i-th exterior power as modules *)
+
+Lemma mxdirect_extn : mxdirect (\sum_(i < n.+1) extn i).
+Proof.
+have card_small (A : {set 'I_n}) : (#|A| < n.+1)%N.
+  by rewrite ltnS (leq_trans (max_card _)) ?card_ord.
+apply/mxdirectP=> /=; rewrite -(@partition_big _ _ _ _ _ xpredT
+          (fun A => Ordinal (card_small A)) xpredT) //=.
+rewrite (mxdirectP _) ?mxdirect_delta //=; last by move=> ????/enum_rank_inj.
+by rewrite (@partition_big _ _ _ _ _ xpredT
+          (fun A => Ordinal (card_small A)) xpredT) //=.
+Qed.
+
+
+Lemma extnn : (\sum_(i < n.+1) extn i :=: 1%:M)%MS.
+Proof.
+apply/eqmxP; rewrite -mxrank_leqif_eq ?submx1 // dim_exterior /extn.
+rewrite (expnDn 1 1) (mxdirectP _) /=; last exact mxdirect_extn.
+apply/eqP/eq_bigr => i _; rewrite (eq_bigr (fun=> 1%N)); last first.
+  by move=> A _; rewrite mxrank_gen mxrank_delta.
+by rewrite sum1dep_card /= card_draws card_ord !exp1n !muln1.
+Qed.
+
+(* Lemma mul_extnV (u v : exterior) r s : (u <= extn r)%MS -> (v <= extn s)%MS -> *)
+(*   (u *w v)  = 0. *)
+
+(** Universal Property ? *)
+
+
+Lemma form_of_extK2 r (u : exterior F n') :  (* u = \sum_(s : {set 'I_n} | #|s| == r) u 0 (enum_rank s) *: (blade s) *)
+(u <= extn r)%MS
+ -> ext_of_form (@form_of_ext2 F n' r u) = u.
+Proof.
+move=> /extnP uinextr.
+rewrite /ext_of_form (* /form_of_ext2 *) [in RHS]uinextr.
+apply: eq_bigr=> s sr; congr ( _ *: _ ).
+rewrite /form_of_ext2.
+rewrite (bigD1 s) //=.
+rewrite big1 ?addr0.
+have minor1 : minor id (fun j : 'I_r => nth ord0 (exterior_enum s) j)
+    (\matrix_i [seq 'e_i0 | i0 <- exterior_enum s]`_i : 'M[F]__) = 1; last first.
+  - by rewrite minor1 mulr1.
+  (* expand_det_(row || col) *)
+  admit.
+
+
+move=> A /andP Ar_neqs.
+have Ar : (#|A| == r). exact : (proj1 Ar_neqs).
+have A_neqs : A != s.  exact : (proj2 Ar_neqs).
+
+have minor0 B :  B != s -> minor id (fun j : 'I_r => nth ord0 (exterior_enum B) j)
+    (\matrix_i [seq 'e_i0 | i0 <- exterior_enum s]`_i) = 0; last first.
+by rewrite minor0 ?mulr0.
+
+
+move=> Bneqs.
+
+(* expand_det_(row || col) *)
+admit.
+
+
+
+Admitted.
+
+
+
+Lemma mul_ext_form2 r s (f : r.-form[F ^ n']) (g : s.-form[F ^ n']) :
   ext_of_form (mul_form2 f g) =1 (ext_of_form f) * (ext_of_form g).
 Proof.
 rewrite /mul_form2.
@@ -1862,10 +1874,5 @@ Admitted.
 (*   k0 f v. *)
 
 
-
-
-End Form.
-
-End ExteriorDef.
-
+End FormField.
 End Exterior.
