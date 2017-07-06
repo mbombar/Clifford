@@ -1,0 +1,3 @@
+-R . mathcomp.clifford
+aux.v
+exterior.v
