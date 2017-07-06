@@ -692,12 +692,11 @@ by rewrite /sign2 delta_0 //= ND.
 Qed.
 
 
-
-Lemma sign2Dl (R S T : {set 'I_n}) : [disjoint R & S] -> sign2 (R :|: S) T = (sign2 R T)*(sign2 S T).
+Lemma sign2Dl (R S T : {set 'I_n}) : [disjoint R & S] ->
+ sign2 (R :|: S) T = sign2 R T * sign2 S T.
 Proof.
 move => dRS; rewrite /sign2.
 Admitted.
-
 
 
 Lemma sign2ii (i : 'I_n) : sign2 [set i] [set i] = 0.
@@ -719,17 +718,18 @@ by move=> x; rewrite !mem_enum !inE orbC.
 Qed.
 
 
-Definition sigma (i j : 'I_n) : F := if i == j then 0 else (if i > j then 1 else -1).
+(* Definition sign (A B : {set 'I_n}) : F := *)
+(*   \prod_(i in A) \prod_(j in B) if i == j then 0 else (if (i > j)%N then 1 else -1). *)
 
-Definition sign (A B : {set 'I_n}) : F :=
-  \prod_(i in A) \prod_(j in B) sigma i j.
+Definition sign (I J: {set 'I_n}) : F :=
+  \prod_(i in I) \prod_(j in J) (sgz (i%:Z - j%:Z))%:~R.
 
-Lemma sign0S1 (S : {set 'I_n}) : sign set0 S = 1.
+Lemma sign0I1 (I : {set 'I_n}) : sign set0 I = 1.
 Proof. by rewrite /sign big_pred0; last  by move=> ?; rewrite in_set0. Qed.
 
-Lemma signS01 (S : {set 'I_n}) : sign S set0 = 1.
-Proof. 
-by rewrite /sign exchange_big big_pred0; last by move=> ?; rewrite in_set0. 
+Lemma signI01 (I : {set 'I_n}) : sign I set0 = 1.
+Proof.
+by rewrite /sign exchange_big big_pred0; last by move=> ?; rewrite in_set0.
 Qed.
 
 (* Lemma disjointC (A B : {set 'I_n}) : [disjoint A & B] = [disjoint B & A]. *)
@@ -746,52 +746,36 @@ Admitted.
 
 Lemma signND (A B : {set 'I_n}) : ~~ [disjoint A & B] -> sign A B = 0.
 Proof.
-rewrite -setI_eq0.
-move : set_0Vmem => set_0Vmem.
-have : (set_0Vmem _ (A :&: B)); last first.
-rewrite -card_gt0.
-move=> ND.
-rewrite /sign.
-Admitted.
-
-Lemma signDl (R S T : {set 'I_n}) : [disjoint R & S] -> sign (R :|: S) T = (sign R T)*(sign S T).
-Proof.
-move => dRS; rewrite /sign.
-rewrite (eq_bigl (fun i => i \in [predU R & S])); last by move=> ?; rewrite !inE.
-by rewrite bigU //=.
-Qed.
-
-
-Lemma signDr (R S T : {set 'I_n}) : [disjoint S & T] -> sign R (S :|: T) = (sign R S)*(sign R T).
-Proof.
-move=> dST; rewrite /sign -big_split; apply : eq_bigr=> i _.
-rewrite (eq_bigl (fun j=> j \in [predU S & T])); last by move=> ?; rewrite !inE.
-by rewrite bigU.
+rewrite -setI_eq0 => /set0Pn [/= k]; rewrite inE => /andP[kA kB].
+by rewrite /sign (bigD1 k) //= (bigD1 k) //= subrr !mul0r.
 Qed.
 
 Lemma signii (i : 'I_n) : sign [set i] [set i] = 0.
+Proof. by rewrite /sign !big_set1 subrr. Qed.
+
+Lemma signC (I J : {set 'I_n}) : sign I J = (-1) ^+ (#|I| * #|J|) * sign J I.
 Proof.
-rewrite /sign !big_set1.
-by rewrite /sigma eq_refl.
+rewrite /sign exchange_big /= exprM.
+do 2?[rewrite -prodr_const -big_split /=; apply: eq_bigr=> ? _].
+by rewrite mulN1r -rmorphN -sgzN opprB.
 Qed.
 
+Lemma signiC (i j : 'I_n) : sign [set j] [set i] = - sign [set i] [set j].
+Proof. by rewrite signC !cards1 mulN1r. Qed.
 
-Lemma signC (i j : 'I_n) : sign [set j] [set i] = - sign [set i] [set j].
+Lemma signDl (I J K : {set 'I_n}) : [disjoint I & J] ->
+  sign (I :|: J) K = sign I K * sign J K.
 Proof.
-have [->| neq_ij] := eqVneq i j; first by rewrite signii oppr0.
-rewrite /sign !big_set1.
-move : neq_ij; rewrite -val_eqE.
-case : ltngtP.
-rewrite //=.
-move=> ltn_ij _.
-move : ltn_ij.
-rewrite /sigma.
-(* rewrite [LHS]gtn_eqF. *)
+by move=> ?; rewrite /sign (eq_bigl [predU I & J]) ?bigU=> // ?; rewrite !inE.
+Qed.
 
-
-(* move : neq_ij; rewrite neq_ltn. *)
-Admitted.
-
+Lemma signDr (I J K : {set 'I_n}) : [disjoint J & K] ->
+  sign I (J :|: K) = sign I J * sign I K.
+Proof.
+move=> ?; rewrite /sign exchange_big (eq_bigl [predU J & K]) ?bigU //=.
+  by rewrite exchange_big [X in _ * X]exchange_big.
+by move=> ?; rewrite !inE.
+Qed.
 
 (*
 Search _ (_^~ _ = _ ^~ _).
@@ -827,7 +811,7 @@ Admitted.
 
 
 (** basis vector of the exterior algebra *)
-Definition blade A : exterior := (delta_mx 0 (enum_rank A)).
+Definition blade A : exterior := 'e_(enum_rank A).
 
 Definition to_ext (x : 'rV_n) : exterior :=
   \sum_(i : 'I_n) (x 0 i) *: blade [set i].
@@ -839,25 +823,25 @@ Proof.
 by rewrite /to_ext -big_split; apply: eq_bigr => i _; rewrite mxE scalerDl.
 Qed.
 
-Lemma blade_eq (A B : {set 'I_n}) : B = A -> (blade A) 0 (enum_rank B) = 1.
+Lemma blade_eq (I J : {set 'I_n}) : J = I -> blade I 0 (enum_rank J) = 1.
 Proof.
-move => eqAB.
+move => eqIJ.
 rewrite /blade/delta_mx mxE //=.
-have eqrank : enum_rank B == enum_rank A.
+have eqrank : enum_rank J == enum_rank I.
 apply /eqP.
-rewrite (@f_equal _ _ _ _ A) //=.
+rewrite (@f_equal _ _ _ _ I) //=.
 by rewrite eqrank.
 Qed.
 
 
-Lemma blade_diff (A B : {set 'I_n}) : B != A -> (blade A) 0 (enum_rank B) = 0.
+Lemma blade_diff (I J : {set 'I_n}) : J != I -> blade I 0 (enum_rank J) = 0.
 Proof.
-move => BnA; rewrite /blade /delta_mx mxE //=.
-have NeqAB : (enum_rank B == enum_rank A) = false; last first.
- -  by  rewrite NeqAB.
+move => JnI; rewrite /blade /delta_mx mxE //=.
+have NeqIJ : (enum_rank J == enum_rank I) = false; last first.
+ -  by  rewrite NeqIJ.
 apply negbTE; rewrite eq_sym.
-move : BnA; rewrite eq_sym.
-move : (@enum_rank_inj _ (A) (B)).
+move : JnI; rewrite eq_sym.
+move : (@enum_rank_inj _ I J).
 by apply contra_neq.
 Qed.
 
@@ -869,20 +853,20 @@ Print Canonical Projections.
 (** First : Ring structure *)
 
 (** For blades *)
-Definition mul_blade (R S : {set 'I_n}) : exterior := sign R S *: blade (R :|: S).
+Definition mul_blade (I J : {set 'I_n}) : exterior := sign I J *: blade (I :|: J).
 Local Notation "*b%F" := (@mul_blade _).
-Local Notation "R *b S" := (mul_blade R S) (at level 40).
+Local Notation "R *b I" := (mul_blade R I) (at level 40).
 
 Definition id_ext : exterior := blade set0.
 
 (** id_ext is an identity element *)
-Lemma lmul_blade_1 (S : {set 'I_n}) : S *b set0 = blade S.
+Lemma lmul_blade_1 (I : {set 'I_n}) : I *b set0 = blade I.
 Proof.
-by rewrite /mul_blade setU0 signS01 scale1ext. Qed.
+by rewrite /mul_blade setU0 signI01 scale1ext. Qed.
 
-Lemma rmul_blade_1 (S : {set 'I_n}) : set0 *b S  = blade S.
+Lemma rmul_blade_1 (I : {set 'I_n}) : set0 *b I  = blade I.
 Proof.
-by rewrite /mul_blade set0U sign0S1 scale1ext. Qed.
+by rewrite /mul_blade set0U sign0I1 scale1ext. Qed.
 
 
 
@@ -893,25 +877,23 @@ Definition mul_ext (u v : exterior) : exterior :=
    (u 0 (enum_rank su) * v 0 (enum_rank sv) * sign su sv) *: blade (su :|: sv).
 
 Local Notation "*w%F" := (@mul_ext _).
-Local Notation "u *w w" := (mul_ext u w) (at level 40).
+Local Notation "u *w w" := (mul_ext u w) (left associativity, at level 40).
 
-
-
-Lemma mul_extE (u v : exterior) (A : {set 'I_n}) :
-  (u *w v) 0 (enum_rank A) =
-  \sum_(s in powerset A)
-   (u 0 (enum_rank s) * v 0 (enum_rank (A :\: s)) * sign s (A :\: s)).
+Lemma mul_extE (u v : exterior) (I : {set 'I_n}) :
+  (u *w v) 0 (enum_rank I) =
+  \sum_(J in powerset I)
+   (u 0 (enum_rank J) * v 0 (enum_rank (I :\: J)) * sign J (I :\: J)).
 Proof.
 have bm := (@big_morph _ _ (fun M : 'M__ => M 0 _) 0 +%R) ; move=> [:mid mop].
 rewrite [LHS]bm; last first.
 - by abstract: mid; rewrite mxE.
 - by abstract: mop; move=> ??; rewrite mxE.
-rewrite (bigID (mem (powerset A))) /=.
+rewrite (bigID (mem (powerset I))) /=.
 rewrite [X in _ + X]big1 ?addr0 /=; last first.
   move=> su; rewrite inE => NsuA.
   rewrite bm ?big1 => // sv _; rewrite !mxE /= [_ == _]negbTE ?mulr0 //.
   by apply: contraNneq NsuA => /enum_rank_inj ->; rewrite subsetUl.
-apply: eq_bigr => su suA; rewrite bm // (bigD1 (A :\: su)) //= big1 ?addr0.
+apply: eq_bigr => su suA; rewrite bm // (bigD1 (I :\: su)) //= big1 ?addr0.
   rewrite setDE setUIr -setDE setUCr setIT (setUidPr _) -?powersetE //.
   by rewrite !mxE ?eqxx ?mulr1.
 move=> sv svNADsu; rewrite !mxE /=.
@@ -936,7 +918,7 @@ rewrite big1 => [|s sneq0]; last first.
   - rewrite blade_diff ?mul0r //=.
     by move : sneq0; case : (s \in powerset A).
 rewrite blade_eq //=.
-by rewrite sign0S1 setD0 mulr1 mul1r addr0.
+by rewrite sign0I1 setD0 mulr1 mul1r addr0.
 Qed.
 
 
@@ -947,7 +929,7 @@ move=> u; apply /rowP => i; rewrite -(enum_valK i).
 set A := enum_val i.
 rewrite mul_extE (bigD1 (A)) //=;  last first. by rewrite powersetE.
 rewrite big1 => [|s spropA]; last first.
-  - have SsubA : s \subset A.
+  - have sub_sA : s \subset A.
        by move : spropA; rewrite andbC => /andP[ _]; rewrite powersetE.
   - have ADSneq0 : A :\: s != set0.
     by rewrite -card_gt0 cardsDS ?SsubA ?subn_gt0;
@@ -955,7 +937,7 @@ rewrite big1 => [|s spropA]; last first.
   - rewrite blade_diff; last first. by rewrite ADSneq0.
       by rewrite mulrAC mulr0.
 rewrite blade_eq; last first. by rewrite setDv.
-by rewrite setDv addr0 signS01 ?mulr1.
+by rewrite setDv addr0 signI01 ?mulr1.
 Qed.
 
 
@@ -1084,30 +1066,27 @@ Admitted.
 
 
 (** Blade product is a particular case of wedge product of two exterior *)
-Lemma mul_blade_ext (R S : {set 'I_n}) : R *b S = blade R *w blade S.
+Lemma mul_blade_ext (I J : {set 'I_n}) : I *b J = blade I *w blade J.
 Proof.
 rewrite /mul_blade /mul_ext.
-rewrite (bigD1 R) //= addrC.
-rewrite big1 => [|T TneqR]; last first.
-  - rewrite blade_diff ?TneqR //=.
-    rewrite (bigD1 S) //=.
-    rewrite big1 => [| U UneqS]; last first.
-      - by rewrite blade_diff ?UneqS ?mul0r ?scale0r.
+rewrite (bigD1 I) //= addrC.
+rewrite big1 => [|K KneqI]; last first.
+  - rewrite blade_diff ?KneqI //=.
+    rewrite (bigD1 J) //=.
+    rewrite big1 => [| L LneqJ]; last first.
+      - by rewrite blade_diff ?LneqJ ?mul0r ?scale0r.
     by rewrite blade_eq ?mul0r ?scale0r ?addr0.
-rewrite add0r (bigD1 S) //=.
-rewrite big1 => [| U UneqS]; last first.
+rewrite add0r (bigD1 J) //=.
+rewrite big1 => [| U UneqJ]; last first.
  - by rewrite blade_eq ?blade_diff ?mul1r ?mul0r ?scale0r.
 by rewrite !blade_eq ?mul1r ?addr0.
 Qed.
-Hint Resolve mul_blade_ext.
 
 (** Better Alternative: *)
 
 
-
-
 (** 0 is 0 *)
-Lemma ext0 (A : {set 'I_n}) : (0 : exterior) 0 (enum_rank A) = 0.
+Lemma ext0 (I : {set 'I_n}) : (0 : exterior) 0 (enum_rank I) = 0.
 Proof. by rewrite mxE. Qed.
 
 
@@ -1242,27 +1221,28 @@ Proof. by rewrite mul_ext_suml; apply: eq_bigr => i _; rewrite mul_ext_sumr. Qed
 
 (** Exterior product is associative *)
 
-Lemma mul_bladeA (R S T : {set 'I_n}) : (blade R) *w ((blade S) *w (blade T)) = ((blade R) *w (blade S)) *w (blade T).
+Lemma mul_bladeA (I J K : {set 'I_n}) :
+   blade I *w (blade J *w blade K) = blade I *w blade J *w blade K.
 Proof.
 rewrite -!mul_blade_ext /mul_blade -scaleextAr -scaleextAl.
 rewrite -!mul_blade_ext /mul_blade !scalerA setUA; congr ( _ *: _).
-have [disRS|NdisRS] := boolP [disjoint R & S]; last first.
-    - have NdisRSuT : ~~ [disjoint R & S :|: T]; last first.
-      by rewrite [sign R ( S :|: T)]signND ?[sign R S]signND
-                 ?mulr0 ?mul0r ?NdisRSuT.
-      have Subset : ((R :&: S) \subset R :&: (S :|: T)); last first.
-        - move: Subset NdisRS; rewrite -!setI_eq0.
+have [disIJ|NdisIJ] := boolP [disjoint I & J]; last first.
+    - have NdisIJuK : ~~ [disjoint I & J :|: K]; last first.
+      by rewrite [sign I ( J :|: K)]signND ?[sign I J]signND
+                 ?mulr0 ?mul0r ?NdisIJuK.
+      have subIJK : ((I :&: J) \subset I :&: (J :|: K)); last first.
+        - move: subIJK NdisIJ; rewrite -!setI_eq0.
           exact: subset_neq0.
       rewrite setIUr subsetUl //=.
-have [disST|NdisST] := boolP [disjoint S & T]; last first.
-  - have NdisRuST : ~~ [disjoint R :|: S & T]; last first.
-      by rewrite [sign (R :|: S) T]signND ?[sign S T]signND
-                 ?mulr0 ?mul0r ?NdisRSuT.
-      have Subset : ((S :&: T) \subset (R :|: S) :&: T); last first.
-        - move: Subset NdisST; rewrite -!setI_eq0.
-          exact: subset_neq0.
-      rewrite setIUl subsetUr //=.
-by rewrite signDl ?signDr ?disRS ?disST //= mulrC mulrA.
+have [disJK|NdisJK] := boolP [disjoint J & K].
+  by rewrite signDl ?signDr ?disIJ ?disJK //= mulrC mulrA.
+have NdisIuJK : ~~ [disjoint I :|: J & K]; last first.
+  rewrite [sign (I :|: J) K]signND ?[sign J K]signND;
+  by rewrite ?mulr0 ?mul0r ?NdisIJuK.
+have subIJK : ((J :&: K) \subset (I :|: J) :&: K); last first.
+   move: subIJK NdisJK; rewrite -!setI_eq0.
+   exact: subset_neq0.
+by rewrite setIUl subsetUr.
 Qed.
 
 Lemma mul_extA : associative mul_ext.
@@ -1339,33 +1319,33 @@ End ExteriorRing.
 (* Local Notation "\prod_ ( i <- r ) B" := *)
 (*   (\big[mul_ext/id_ext]_(i <- r) B%ext) : ext_scope. *)
 
-
-
-Lemma mul_blades R S : blade R * blade S = sign R S *: blade (R :|: S).
+Lemma mul_blades I J : blade I * blade J = sign I J *: blade (I :|: J).
 Proof.
 rewrite -mulextE /mul_ext.
-rewrite (bigD1 R) //= addrC.
-rewrite big1 => [|T TneqR]; last first.
-  - rewrite blade_diff ?TneqR //=.
-    rewrite (bigD1 S) //=.
-    rewrite big1 => [| U UneqS]; last first.
-      - by rewrite blade_diff ?UneqS ?mul0r ?scale0r.
-    by rewrite blade_eq ?mul0r ?scale0r ?addr0.
-rewrite add0r (bigD1 S) //=.
-rewrite big1 => [| U UneqS]; last first.
- - by rewrite blade_eq ?blade_diff ?mul1r ?mul0r ?scale0r.
+rewrite (bigD1 I) //= addrC.
+rewrite big1 => [|K KneqI]; last first.
+  rewrite blade_diff ?KneqI //=.
+  rewrite (bigD1 J) //=.
+  rewrite big1 => [|L LneqJ]; last first.
+    by rewrite blade_diff ?UneqJ ?mul0r ?scale0r.
+  by rewrite blade_eq ?mul0r ?scale0r ?addr0.
+rewrite add0r (bigD1 J) //=.
+rewrite big1 => [|L LneqJ]; last first.
+  by rewrite blade_eq ?blade_diff ?mul1r ?mul0r ?scale0r.
 by rewrite !blade_eq ?mul1r ?addr0.
 Qed.
-
 
 
 Lemma mul_bladexx0 (i : 'I_n) : (blade [set i]) * (blade [set i]) = 0.
 Proof. by rewrite -mulextE -mul_blade_ext /mul_blade signii scale0r. Qed.
 
-Lemma mul_bladeNC (i j : 'I_n) :
-  (blade [set i])*(blade [set j]) = - (blade [set j])*(blade [set i]).
-Proof. by rewrite mulNr !mul_blades signC scaleNr setUC. Qed.
+Lemma mul_bladeC (I J : {set 'I_n}) :
+  blade I * blade J = (-1) ^+ (#|I| * #|J|) *: (blade J * blade I).
+Proof. by rewrite !mul_blades signC -scalerA setUC. Qed.
 
+Lemma mul_1bladeC (i j : 'I_n) :
+  blade [set i] * blade [set j] = - blade [set j] * blade [set i].
+Proof. by rewrite mul_bladeC !cards1 scaleN1r mulNr. Qed.
 
 
 (** Only true for vectors from the original vector space *)
@@ -1374,19 +1354,19 @@ Lemma mulxx0 (x : 'rV_n) : x%:ext ^+ 2 = 0.
 Proof.
 rewrite /to_ext expr2 big_distrlr //=.
 rewrite (eq_bigr (fun (i : 'I_n) =>
-  \sum_(j < n | j < i) x``_i * x``_j *: (blade [set i] * blade [set j]) +
-  \sum_(j < n | j > i) x``_i * x``_j *: (blade [set i] * blade [set j]))).
+  \sum_(j < n | (j < i)%N) x``_i * x``_j *: (blade [set i] * blade [set j]) +
+  \sum_(j < n | (j > i)%N) x``_i * x``_j *: (blade [set i] * blade [set j]))).
 rewrite big_split /= [X in _ + X](exchange_big_dep predT) //=.
 rewrite -big_split /= big1 //=.
   move=> i _; rewrite -big_split big1 //=.
-  move=> j _; rewrite mulrC -scalerDr [X in _ + X]mul_bladeNC.
+  move=> j _; rewrite mulrC -scalerDr [X in _ + X]mul_1bladeC.
   by rewrite -[X in X + _]add0r mulNr addrK scaler0.
 move=> i _; rewrite (bigD1 i) //=.
 rewrite -scalerAl -scalerAr mul_bladexx0 !scaler0 add0r.
-rewrite (bigID (fun (j : 'I_n) => (j < i))) //=.
-rewrite (eq_bigl (fun j : 'I__ => j < i)); last first.
+rewrite (bigID (fun j : 'I__ => j < i)%N) //=.
+rewrite (eq_bigl (fun j : 'I__ => j < i)%N); last first.
   by move=> j; rewrite -val_eqE /=; case: ltngtP.
-rewrite [X in _ + X](eq_bigl (fun j : 'I__ => i < j)); last first.
+rewrite [X in _ + X](eq_bigl (fun j : 'I__ => i < j)%N); last first.
   by move=> j; rewrite -val_eqE /=; case: ltngtP.
 move=> [: disj_lelt]; rewrite -!bigU /=; last 2 first.
 - abstract: disj_lelt; rewrite disjoint_subset; apply /subsetP => j;
