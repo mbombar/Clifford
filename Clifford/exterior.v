@@ -768,11 +768,8 @@ Proof. by rewrite signC !cards1 mulN1r. Qed.
 
 Lemma sqr_sign I J : sign I J ^+ 2 = [disjoint I & J]%:R.
 Proof.
-rewrite /sign pair_big -prodrXl.
-have [disjIJ|ndisjIK] := boolP [disjoint _ & _]; last first.
-  move: ndisjIK; rewrite -setI_eq0 => /set0Pn[i]; rewrite inE=> /andP[iI iJ].
-  by rewrite (bigD1 (i,i)) ?iI //= subrr expr0n mul0r.
-rewrite big1 //= => ij /andP[iI jJ].
+have [disjIJ|?] := boolP [disjoint _ & _]; last by rewrite signND ?expr0n.
+rewrite /sign pair_big -prodrXl big1 //= => ij /andP[iI jJ].
 rewrite -rmorphX /= sgz_odd // subr_eq0.
 apply: contraTneq disjIJ => [] [] /val_inj eq_ij.
 by rewrite -setI_eq0; apply/set0Pn; exists ij.1; rewrite inE iI eq_ij.
