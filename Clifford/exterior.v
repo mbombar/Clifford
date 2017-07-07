@@ -727,10 +727,10 @@ Qed.
 Definition sign (I J: {set 'I_n}) : F :=
   \prod_(i in I) \prod_(j in J) (sgz (i%:Z - j%:Z))%:~R.
 
-Lemma sign0I1 (I : {set 'I_n}) : sign set0 I = 1.
+Lemma sign0I (I : {set 'I_n}) : sign set0 I = 1.
 Proof. by rewrite /sign big_pred0; last  by move=> ?; rewrite in_set0. Qed.
 
-Lemma signI01 (I : {set 'I_n}) : sign I set0 = 1.
+Lemma signI0 (I : {set 'I_n}) : sign I set0 = 1.
 Proof.
 by rewrite /sign exchange_big big_pred0; last by move=> ?; rewrite in_set0.
 Qed.
@@ -766,19 +766,61 @@ Qed.
 Lemma signiC (i j : 'I_n) : sign [set j] [set i] = - sign [set i] [set j].
 Proof. by rewrite signC !cards1 mulN1r. Qed.
 
+Lemma sqr_sign I J : sign I J ^+ 2 = [disjoint I & J]%:R.
+Proof.
+rewrite /sign pair_big -prodrXl.
+have [disjIJ|ndisjIK] := boolP [disjoint _ & _]; last first.
+  move: ndisjIK; rewrite -setI_eq0 => /set0Pn[i]; rewrite inE=> /andP[iI iJ].
+  by rewrite (bigD1 (i,i)) ?iI //= subrr expr0n mul0r.
+rewrite big1 //= => ij /andP[iI jJ].
+rewrite -rmorphX /= sgz_odd // subr_eq0.
+apply: contraTneq disjIJ => [] [] /val_inj eq_ij.
+by rewrite -setI_eq0; apply/set0Pn; exists ij.1; rewrite inE iI eq_ij.
+Qed.
+
+Lemma signUl (I J K : {set 'I_n}) :
+  sign (I :|: J) K = sign I K * sign J K * sign (I :&: J) K.
+Proof.
+wlog disjIJ : I J K / [disjoint I & J] => [hwlog|]; last first.
+  rewrite disjoint_setI0 ?sign0I ?mulr1 //.
+  by rewrite /sign (eq_bigl [predU I & J]) ?bigU=> // ?; rewrite !inE.
+set L := I :&: J; pose J' := J :\: L.
+have [disjLK|ndisjLK] := boolP [disjoint L & K]; last first.
+  rewrite (signND ndisjLK) mulr0 signND //.
+  apply: contra ndisjLK; apply: disjoint_trans.
+  by rewrite subIset // !subsetU // !subxx // orbC.
+rewrite (_ : J = J' :|: L); last first.
+  by apply/setP=> i; rewrite !inE; case: (_ \in _) (_ \in _) => [] [].
+rewrite setUA setUAC (setUidPl (subsetIl _ _)).
+have disjIJ': [disjoint I & J'] by rewrite -setI_eq0 /J' setIDA setDv.
+  (* TODO: report: why the v? *)
+have disjJ'L: [disjoint J' & L].
+  by rewrite -setI_eq0 /J' setDE setIAC -setIA setICr setI0.
+rewrite hwlog // (disjoint_setI0 disjIJ') sign0I mulr1.
+rewrite hwlog // (disjoint_setI0 disjJ'L) sign0I mulr1.
+by rewrite mulrA -mulrA [sign L K * _]sqr_sign disjLK mulr1.
+Qed.
+
+(* for compatibility *)
 Lemma signDl (I J K : {set 'I_n}) : [disjoint I & J] ->
   sign (I :|: J) K = sign I K * sign J K.
+Proof. by rewrite signUl => /disjoint_setI0->; rewrite sign0I mulr1. Qed.
+
+Lemma signUr (I J K : {set 'I_n}) :
+  sign I (J :|: K) = sign I J * sign I K * sign I (J :&: K).
 Proof.
-by move=> ?; rewrite /sign (eq_bigl [predU I & J]) ?bigU=> // ?; rewrite !inE.
+rewrite ![sign I _]signC signUl !mulrA; congr (_ * _).
+rewrite [RHS]mulrC mulrA; congr (_ * _).
+rewrite !mulrA -exprD mulrAC -exprD; congr (_ * _).
+rewrite -!mulnDr ![(#|I| * _)%N]mulnC !exprM; congr (_ ^+ _).
+rewrite cardsU -[in RHS]addnA [in RHS]addnC.
+rewrite -intr_sign exprB ?cardsI ?leq_subr //.
+by rewrite invr_sign -exprD intr_sign.
 Qed.
 
 Lemma signDr (I J K : {set 'I_n}) : [disjoint J & K] ->
   sign I (J :|: K) = sign I J * sign I K.
-Proof.
-move=> ?; rewrite /sign exchange_big (eq_bigl [predU J & K]) ?bigU //=.
-  by rewrite exchange_big [X in _ * X]exchange_big.
-by move=> ?; rewrite !inE.
-Qed.
+Proof. by rewrite signUr => /disjoint_setI0->; rewrite signI0 mulr1. Qed.
 
 (*
 Search _ (_^~ _ = _ ^~ _).
@@ -865,11 +907,11 @@ Definition id_ext : exterior := blade set0.
 (** id_ext is an identity element *)
 Lemma lmul_blade_1 (I : {set 'I_n}) : I *b set0 = blade I.
 Proof.
-by rewrite /mul_blade setU0 signI01 scale1ext. Qed.
+by rewrite /mul_blade setU0 signI0 scale1ext. Qed.
 
 Lemma rmul_blade_1 (I : {set 'I_n}) : set0 *b I  = blade I.
 Proof.
-by rewrite /mul_blade set0U sign0I1 scale1ext. Qed.
+by rewrite /mul_blade set0U sign0I scale1ext. Qed.
 
 
 
@@ -921,7 +963,7 @@ rewrite big1 => [|s sneq0]; last first.
   - rewrite blade_diff ?mul0r //=.
     by move : sneq0; case : (s \in powerset A).
 rewrite blade_eq //=.
-by rewrite sign0I1 setD0 mulr1 mul1r addr0.
+by rewrite sign0I setD0 mulr1 mul1r addr0.
 Qed.
 
 
@@ -940,7 +982,7 @@ rewrite big1 => [|s spropA]; last first.
   - rewrite blade_diff; last first. by rewrite ADSneq0.
       by rewrite mulrAC mulr0.
 rewrite blade_eq; last first. by rewrite setDv.
-by rewrite setDv addr0 signI01 ?mulr1.
+by rewrite setDv addr0 signI0 ?mulr1.
 Qed.
 
 
@@ -1355,7 +1397,7 @@ Proof. by rewrite mul_bladeC !cards1 scaleN1r mulNr. Qed.
 
 Lemma mulxx0 (x : 'rV_n) : x%:ext ^+ 2 = 0.
 Proof.
-rewrite /to_ext expr2 big_distrlr //=.
+rewrite /to_ext expr2 big_distrlr //=. (* pair_big /=. *)
 rewrite (eq_bigr (fun (i : 'I_n) =>
   \sum_(j < n | (j < i)%N) x``_i * x``_j *: (blade [set i] * blade [set j]) +
   \sum_(j < n | (j > i)%N) x``_i * x``_j *: (blade [set i] * blade [set j]))).
@@ -1561,7 +1603,7 @@ Section form_of2.
 
 Definition form_of_ext2 r (u : exterior) : r.-form := fun v =>
    \sum_(s : {set 'I_n} | #|s| == r)
-      u 0 (enum_rank s) * (minor id (fun j => nth 0 (exterior_enum s) j) v).
+      u 0 (enum_rank s) * (minor id (nth 0 (exterior_enum s)) v).
 
 
 Definition mul_form2 r s (a : r.-form) (b : s.-form) : (r + s).-form :=
