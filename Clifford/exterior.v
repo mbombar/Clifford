@@ -1501,7 +1501,15 @@ Definition alternate r (f : r.-form) :=
 Definition multilinear_alternate r (f : r.-form) :=
   multilinear f /\ alternate f.
 
-
+(** I wanted to say that two multilinear forms which take the same value
+    on a basis are in fact equal. I don't use alternate because otherwise
+    I need to go through permutations. Not sure about the formulation of this lemma. *)
+Lemma multilinear_eq_basis r (f : r.-form) (g : r.-form) :
+multilinear f -> multilinear g -> forall s : seq 'I_n,
+f (\matrix_(i < r) [seq 'e_i | i <- s]`_i) =
+g (\matrix_(i < r) [seq 'e_i | i <- s]`_i)
+-> f =1 g.
+Admitted.
 
 Section form_of1.
 
