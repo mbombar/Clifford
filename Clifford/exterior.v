@@ -9,6 +9,8 @@ From mathcomp
 Require Import perm finset path fingroup ssrnum.
 From CoqEAL
 Require Import minor.
+From mathcomp
+Require Import complex.
 
 
 Require Import aux.
@@ -1757,20 +1759,14 @@ Definition extn r : 'M[F]_dim :=
 Lemma extnP {u : exterior F n'} {r} :
   reflect (u = \sum_(s : {set 'I_n} | #|s| == r) (u 0 (enum_rank s) *: blade s))
           (u <= extn r)%MS.
-
 Proof.
-(* apply : (iffP sub_sumsmxP). *)
-(* move=> [C defu]. *)
-
-apply : (iffP idP) => [ | u_sumr]; last first.
- - rewrite u_sumr summx_sub //; move=> s sr.
-   by rewrite scalemx_sub ?(@sumsmx_sup _ _ s) ?genmxE.
-rewrite /extn.
-rewrite [X in (X <= _)%MS](ext_sum_blade u) /=.
-
-(* rewrite (bigID (fun s => #|s| == r)). *)
-Admitted.
-
+apply: (iffP (complex.sub_sums_genmxP _ _ _))=> [[/= u_ ->]|u_eq]; last first.
+  exists (fun A : {set 'I_n} => u``_(enum_rank A)%:M).
+  by rewrite [LHS]u_eq; apply: eq_bigr=> //= ??; rewrite mul_scalar_mx.
+apply: eq_bigr=> A cAr; rewrite summxE (bigD1 A) //= !mxE big_ord1 blade_eq //.
+rewrite mulr1 big1; first by rewrite addr0 -mul_scalar_mx -mx11_scalar.
+by move=> B /andP[_ neqBA]; rewrite mxE big_ord1 blade_diff 1?eq_sym ?mulr0.
+Qed.
 
 (* Notation "'Λ_r" := (extn r) (only parsing): type_scope. *)
 Lemma dim_extn r : \rank (extn r) = 'C(n, r).
