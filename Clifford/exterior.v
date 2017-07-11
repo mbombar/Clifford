@@ -588,6 +588,28 @@ Qed.
 
 End Useful_Lemma.
 
+
+Section Sorted_Enum.
+
+Variable (n' : nat).
+Let n := n'.+1.
+
+Definition sorted_enum (s : {set 'I_n}) : seq 'I_n :=
+  sort (fun i j : 'I_n => (i <= j)%N) (enum s).
+
+Lemma sorted_enum_set0 : sorted_enum set0 = [::] :> seq 'I_n.
+Proof.
+  by rewrite /sorted_enum enum_set0.
+Qed.
+
+
+Lemma sorted_enum_uniq (S : {set 'I_n}) : uniq (sorted_enum S).
+Proof. by rewrite /sorted_enum sort_uniq enum_uniq. Qed.
+
+End Sorted_Enum.
+
+
+
 Section Exterior.
 
 
@@ -626,18 +648,6 @@ Section ExteriorAlgebra.
 Lemma scale1ext (u : exterior) : 1 *: u = u.
 Proof. by rewrite scale1r. Qed.
 
-(** A way to enumerate blades *)
-Definition exterior_enum (s : {set 'I_n}) : seq 'I_n :=
-  sort (fun i j : 'I_n => (i <= j)%N) (enum s).
-
-Lemma exterior_enum_set0 : exterior_enum set0 = [::] :> seq 'I_n.
-Proof.
-  by rewrite /exterior_enum enum_set0.
-Qed.
-
-
-Lemma exterior_enum_uniq (S : {set 'I_n}) : uniq (exterior_enum S).
-Proof. by rewrite /exterior_enum sort_uniq enum_uniq. Qed.
 (*
 rewrite sorted_uniq.
 apply /card_uniqP.
@@ -649,82 +659,82 @@ About uniq.
 *)
 
 
-(** useful for non commutative product *)
-Definition sign2 (A B : {set 'I_n}) : F :=
-  delta F (exterior_enum A ++ exterior_enum B) (exterior_enum (A :|: B)).
+(* (** useful for non commutative product *) *)
+(* Definition sign2 (A B : {set 'I_n}) : F := *)
+(*   delta F (sorted_enum A ++ sorted_enum B) (sorted_enum (A :|: B)). *)
 
 
 
-Lemma sign20S1 (S : {set 'I_n}) : sign2 set0 S = 1.
-Proof.
-rewrite /sign2 set0U exterior_enum_set0 cat0s.
-by rewrite deltaii ?exterior_enum_uniq.
-Qed.
+(* Lemma sign20S1 (S : {set 'I_n}) : sign2 set0 S = 1. *)
+(* Proof. *)
+(* rewrite /sign2 set0U sorted_enum_set0 cat0s. *)
+(* by rewrite deltaii ?sorted_enum_uniq. *)
+(* Qed. *)
 
 
 
-Lemma sign2S01 (S : {set 'I_n}) : sign2 S set0 = 1.
-Proof.
-rewrite /sign2 setU0 exterior_enum_set0 cats0.
-by rewrite deltaii ?exterior_enum_uniq.
-Qed.
+(* Lemma sign2S01 (S : {set 'I_n}) : sign2 S set0 = 1. *)
+(* Proof. *)
+(* rewrite /sign2 setU0 sorted_enum_set0 cats0. *)
+(* by rewrite deltaii ?sorted_enum_uniq. *)
+(* Qed. *)
 
 
-(** Idea : ~~[disjoint A & B] = ~~ (uniq ( exterior_enum A ++ exterior_enum B ) ) *)
-
-
-
-Lemma disjoint_seq (A B : {set 'I_n}) :
-  [disjoint A & B] = [disjoint (exterior_enum A) & (exterior_enum B)].
-Proof.
-rewrite !disjoint_subset; apply/subsetP/subsetP => AB x;
-by have := AB x; rewrite !inE !mem_sort !mem_enum; apply.
-Qed.
-
-
-Lemma exterior_enum_disjoint (A B : {set 'I_n}) :
-    [disjoint A & B] = uniq ( exterior_enum A ++ exterior_enum B).
-Proof.
-rewrite disjoint_sym cat_uniq !exterior_enum_uniq andbT //=.
-by rewrite disjoint_seq disjoint_has. Qed.
+(* (** Idea : ~~[disjoint A & B] = ~~ (uniq ( sorted_enum A ++ sorted_enum B ) ) *) *)
 
 
 
-Lemma sign2ND (A B : {set 'I_n}) : ~~ [disjoint A & B] -> sign2 A B = 0.
-Proof.
-rewrite exterior_enum_disjoint => ND.
-by rewrite /sign2 delta_0 //= ND.
-Qed.
+(* Lemma disjoint_seq (A B : {set 'I_n}) : *)
+(*   [disjoint A & B] = [disjoint (sorted_enum A) & (sorted_enum B)]. *)
+(* Proof. *)
+(* rewrite !disjoint_subset; apply/subsetP/subsetP => AB x; *)
+(* by have := AB x; rewrite !inE !mem_sort !mem_enum; apply. *)
+(* Qed. *)
 
 
-Lemma sign2Dl (R S T : {set 'I_n}) : [disjoint R & S] ->
- sign2 (R :|: S) T = sign2 R T * sign2 S T.
-Proof.
-move => dRS; rewrite /sign2.
-Admitted.
+(* Lemma sorted_enum_disjoint (A B : {set 'I_n}) : *)
+(*     [disjoint A & B] = uniq ( sorted_enum A ++ sorted_enum B). *)
+(* Proof. *)
+(* rewrite disjoint_sym cat_uniq !sorted_enum_uniq andbT //=. *)
+(* by rewrite disjoint_seq disjoint_has. Qed. *)
 
 
-Lemma sign2ii (i : 'I_n) : sign2 [set i] [set i] = 0.
-Proof.
-by rewrite sign2ND //= -setI_eq0 setIid; apply /set0Pn; exists i; rewrite set11.
-Qed.
+
+(* Lemma sign2ND (A B : {set 'I_n}) : ~~ [disjoint A & B] -> sign2 A B = 0. *)
+(* Proof. *)
+(* rewrite sorted_enum_disjoint => ND. *)
+(* by rewrite /sign2 delta_0 //= ND. *)
+(* Qed. *)
 
 
-Lemma sign_single (i j : 'I_n) : sign2 [set j] [set i] = - sign2 [set i] [set j].
-Proof.
-have [->| neq_ij] := eqVneq i j; first by rewrite sign2ii oppr0.
-rewrite /sign2 /exterior_enum !enum_set1 setUC.
-rewrite delta_catC.
-- by rewrite !size_sort muln1 expr1 mulN1r.
-- by rewrite sort_uniq enum_uniq.
-rewrite -![sort _ [::_]]/[:: _] perm_eq_sym perm_sort.
-rewrite uniq_perm_eq ?enum_uniq //= ?inE 1?eq_sym ?neq_ij //.
-by move=> x; rewrite !mem_enum !inE orbC.
-Qed.
+(* Lemma sign2Dl (R S T : {set 'I_n}) : [disjoint R & S] -> *)
+(*  sign2 (R :|: S) T = sign2 R T * sign2 S T. *)
+(* Proof. *)
+(* move => dRS; rewrite /sign2. *)
+(* Admitted. *)
 
 
-(* Definition sign (A B : {set 'I_n}) : F := *)
-(*   \prod_(i in A) \prod_(j in B) if i == j then 0 else (if (i > j)%N then 1 else -1). *)
+(* Lemma sign2ii (i : 'I_n) : sign2 [set i] [set i] = 0. *)
+(* Proof. *)
+(* by rewrite sign2ND //= -setI_eq0 setIid; apply /set0Pn; exists i; rewrite set11. *)
+(* Qed. *)
+
+
+(* Lemma sign_single (i j : 'I_n) : sign2 [set j] [set i] = - sign2 [set i] [set j]. *)
+(* Proof. *)
+(* have [->| neq_ij] := eqVneq i j; first by rewrite sign2ii oppr0. *)
+(* rewrite /sign2 /sorted_enum !enum_set1 setUC. *)
+(* rewrite delta_catC. *)
+(* - by rewrite !size_sort muln1 expr1 mulN1r. *)
+(* - by rewrite sort_uniq enum_uniq. *)
+(* rewrite -![sort _ [::_]]/[:: _] perm_eq_sym perm_sort. *)
+(* rewrite uniq_perm_eq ?enum_uniq //= ?inE 1?eq_sym ?neq_ij //. *)
+(* by move=> x; rewrite !mem_enum !inE orbC. *)
+(* Qed. *)
+
+
+(* (* Definition sign (A B : {set 'I_n}) : F := *) *)
+(* (*   \prod_(i in A) \prod_(j in B) if i == j then 0 else (if (i > j)%N then 1 else -1). *) *)
 
 Definition sign (I J: {set 'I_n}) : F :=
   \prod_(i in I) \prod_(j in J) (sgz (i%:Z - j%:Z))%:~R.
@@ -743,7 +753,7 @@ Qed.
 
 (* Search _ (mem _ _ = mem ).
 Search _ "mem" "C".
-rewrite /exterior_enum //=.
+rewrite /sorted_enum //=.
 Search _ "mem" "sort".
 (* rewrite mem_sort. *)
 Admitted.
@@ -1483,13 +1493,13 @@ Notation "r .-form" := (form_of r)
 (*                     b (\matrix_(i < s) row (sigma (unsplit (inr i))) v). *)
 
 
-(*Definition exterior_enum (s : {set 'I_n}) : seq 'I_n :=
+(*Definition sorted_enum (s : {set 'I_n}) : seq 'I_n :=
   sort (fun i j : 'I_n => i <= j) (enum s).*)
 
-(* Definition size_exterior_enum r (s : {set 'I_n}) : #|s| = r -> size (exterior_enum s) == r. *)
+(* Definition size_sorted_enum r (s : {set 'I_n}) : #|s| = r -> size (sorted_enum s) == r. *)
 (* Proof. Admitted. *)
 
-(* Definition canon_tuple (s : {set 'I_n}) := Tuple (size_exterior_enum s). *)
+(* Definition canon_tuple (s : {set 'I_n}) := Tuple (size_sorted_enum s). *)
 
 Definition multilinear r (f : r.-form) :=
    forall (A B C : 'M_(r,n)) (i0 : 'I_r) (b c : F),
@@ -1520,7 +1530,7 @@ Definition form_of_ext r (u : exterior) : r.-form := fun v =>
 
 Definition ext_of_form r (f : r.-form) : exterior :=
   \sum_(s : {set 'I_n} | #|s| == r)
-   f (\matrix_(i < r) [seq 'e_i | i <- exterior_enum s]`_i) *: blade s.
+   f (\matrix_(i < r) [seq 'e_i | i <- sorted_enum s]`_i) *: blade s.
 
 
 Definition mul_form r s (a : r.-form) (b : s.-form) : (r + s).-form :=
@@ -1608,7 +1618,7 @@ Section form_of2.
 
 Definition form_of_ext2 r (u : exterior) : r.-form := fun v =>
    \sum_(s : {set 'I_n} | #|s| == r)
-      u 0 (enum_rank s) * (minor id (nth 0 (exterior_enum s)) v).
+      u 0 (enum_rank s) * (minor id (nth 0 (sorted_enum s)) v).
 
 
 Definition mul_form2 r s (a : r.-form) (b : s.-form) : (r + s).-form :=
@@ -1675,8 +1685,8 @@ Lemma rowK_sub  T (p' q' p q : nat) (M : 'M[T]_(p, q)) f g k:
 Proof. by apply /rowP=> j; rewrite !mxE. Qed.
 
 Lemma rowK_sub_hinc T (p : nat) (M : 'M[T]_(p, n)) k (S : {set 'I_n}) :
-  row k (\matrix_(i < p, j < n) M i (nth ord0 (exterior_enum S) j)) =
-  \row_j (M k (nth ord0 (exterior_enum S) j)).
+  row k (\matrix_(i < p, j < n) M i (nth ord0 (sorted_enum S) j)) =
+  \row_j (M k (nth ord0 (sorted_enum S) j)).
 Proof. by rewrite rowK_sub. Qed.
 
 Lemma row_scale (R : comRingType) (a : R) (p q : nat) (M : 'M[R]_(p,q)) i :
@@ -1697,7 +1707,7 @@ move/row'_eq=> vu; move/row'_eq=> wu.
 rewrite !big_distrr -big_split; apply: eq_bigr => s sR /=.
 rewrite (mulrCA b) (mulrCA c) -mulrDr; congr (_ * _).
 pose exterior_mat X : 'M[F]_(r, r) :=
-   submatrix id (fun j : 'I_r => nth ord0 (exterior_enum s) j) X.
+   submatrix id (fun j : 'I_r => nth ord0 (sorted_enum s) j) X.
 set A := exterior_mat U; set B := exterior_mat V; set C := exterior_mat W.
 (* set A := submatrix _ _ U; set B := submatrix _ _ V; set C := submatrix _ _ W. *)
 rewrite [LHS](@determinant_multilinear _ _ A B C i0 b c) //; do ?[
@@ -1712,7 +1722,7 @@ move=> A i1 i2 neq_i12 eqA12.
 rewrite /form_of_ext2.
 rewrite big1 //.
 move=> s sr.
-have min0 : minor id (fun j : 'I_r => (exterior_enum s)`_j) A = 0; last first.
+have min0 : minor id (fun j : 'I_r => (sorted_enum s)`_j) A = 0; last first.
   by rewrite min0 ?mulr0.
 rewrite /minor.
 rewrite (@determinant_alternate _ _ _ i1 i2) //.
@@ -1813,12 +1823,12 @@ Proof.
 move=> /extnP uinextr.
 rewrite /ext_of_form (* /form_of_ext2 *) [in RHS]uinextr.
 apply: eq_bigr=> s sr; congr ( _ *: _ ).
-have size_ees: size (exterior_enum s) = r by rewrite size_sort -cardE (eqP sr).
+have size_ees: size (sorted_enum s) = r by rewrite size_sort -cardE (eqP sr).
 rewrite /form_of_ext2.
 rewrite (bigD1 s) //=.
 rewrite big1 ?addr0.
-  have minor1 : minor id (fun j : 'I_r => nth ord0 (exterior_enum s) j)
-    (\matrix_i [seq 'e_i0 | i0 <- exterior_enum s]`_i : 'M[F]__) = 1; last first.
+  have minor1 : minor id (fun j : 'I_r => nth ord0 (sorted_enum s) j)
+    (\matrix_i [seq 'e_i0 | i0 <- sorted_enum s]`_i : 'M[F]__) = 1; last first.
     by rewrite minor1 mulr1.
   (* expand_det_(row || col) *)
   rewrite /minor [X in \det X](_ : _ = 1%:M) ?det1 //.
@@ -1826,21 +1836,21 @@ rewrite big1 ?addr0.
   by rewrite nth_uniq ?size_ees // 1?eq_sym // sort_uniq enum_uniq.
 move=> A /andP [Ar A_neqs].
 have minor0 (B : {set _}) : #|B| = #|s| -> B != s ->
-  minor id (fun j : 'I_r => nth ord0 (exterior_enum B) j)
-    (\matrix_i [seq ('e_i0 : 'M[F]__) | i0 <- exterior_enum s]`_i) = 0; last first.
+  minor id (fun j : 'I_r => nth ord0 (sorted_enum B) j)
+    (\matrix_i [seq ('e_i0 : 'M[F]__) | i0 <- sorted_enum s]`_i) = 0; last first.
   by rewrite minor0 ?mulr0 // (eqP Ar) (eqP sr).
 move=> Bs neq_Bs; have: B :\: s != set0.
   apply: contra_neq neq_Bs=> /eqP; rewrite setD_eq0.
   by move=> /subset_leqif_cards; rewrite Bs => /leqif_refl /eqP.
-have size_eeB: size (exterior_enum B) = r by rewrite size_sort -cardE Bs (eqP sr).
+have size_eeB: size (sorted_enum B) = r by rewrite size_sort -cardE Bs (eqP sr).
 move=> /set0Pn [k]; rewrite inE => /andP [kNs kB]; rewrite /minor.
-set k' := index k (exterior_enum B).
+set k' := index k (sorted_enum B).
 have k'lt : (k' < r)%N by rewrite -size_eeB index_mem mem_sort mem_enum kB.
 rewrite (expand_det_col _ (Ordinal k'lt)) big1 // => i _.
 rewrite !mxE (nth_map 0) ?size_ees // mxE eqxx /=.
 rewrite nth_index ?mem_sort ?mem_enum //.
 have [k_eq|] := altP eqP; last by rewrite mul0r.
-have: {subset exterior_enum s <= s} by move=> ?; rewrite mem_sort mem_enum.
+have: {subset sorted_enum s <= s} by move=> ?; rewrite mem_sort mem_enum.
 by move=> /(_ k); rewrite (negPf kNs) k_eq mem_nth ?size_ees // => /(_ isT).
 Qed.
 
