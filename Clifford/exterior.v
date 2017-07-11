@@ -1507,10 +1507,8 @@ Definition multilinear_alternate r (f : r.-form) :=
     on a basis are in fact equal. I don't use alternate because otherwise
     I need to go through permutations. Not sure about the formulation of this lemma. *)
 Lemma multilinear_eq_basis r (f : r.-form) (g : r.-form) :
-multilinear f -> multilinear g -> forall s : seq 'I_n,
-f (\matrix_(i < r) [seq 'e_i | i <- s]`_i) =
-g (\matrix_(i < r) [seq 'e_i | i <- s]`_i)
--> f =1 g.
+multilinear f -> multilinear g ->
+(forall i j, f (delta_mx i j) = g (delta_mx i j)) -> f =1 g.
 Admitted.
 
 Section form_of1.
@@ -1815,33 +1813,36 @@ Proof.
 move=> /extnP uinextr.
 rewrite /ext_of_form (* /form_of_ext2 *) [in RHS]uinextr.
 apply: eq_bigr=> s sr; congr ( _ *: _ ).
+have size_ees: size (exterior_enum s) = r by rewrite size_sort -cardE (eqP sr).
 rewrite /form_of_ext2.
 rewrite (bigD1 s) //=.
 rewrite big1 ?addr0.
-have minor1 : minor id (fun j : 'I_r => nth ord0 (exterior_enum s) j)
+  have minor1 : minor id (fun j : 'I_r => nth ord0 (exterior_enum s) j)
     (\matrix_i [seq 'e_i0 | i0 <- exterior_enum s]`_i : 'M[F]__) = 1; last first.
-  - by rewrite minor1 mulr1.
+    by rewrite minor1 mulr1.
   (* expand_det_(row || col) *)
-  admit.
-
-
-move=> A /andP Ar_neqs.
-have Ar : (#|A| == r). exact : (proj1 Ar_neqs).
-have A_neqs : A != s.  exact : (proj2 Ar_neqs).
-
-have minor0 B :  B != s -> minor id (fun j : 'I_r => nth ord0 (exterior_enum B) j)
-    (\matrix_i [seq 'e_i0 | i0 <- exterior_enum s]`_i) = 0; last first.
-by rewrite minor0 ?mulr0.
-
-
-move=> Bneqs.
-
-(* expand_det_(row || col) *)
-admit.
-
-
-
-Admitted.
+  rewrite /minor [X in \det X](_ : _ = 1%:M) ?det1 //.
+  apply/matrixP=> i j; rewrite !mxE (nth_map 0) ?size_ees // mxE eqxx /=.
+  by rewrite nth_uniq ?size_ees // 1?eq_sym // sort_uniq enum_uniq.
+move=> A /andP [Ar A_neqs].
+have minor0 (B : {set _}) : #|B| = #|s| -> B != s ->
+  minor id (fun j : 'I_r => nth ord0 (exterior_enum B) j)
+    (\matrix_i [seq ('e_i0 : 'M[F]__) | i0 <- exterior_enum s]`_i) = 0; last first.
+  by rewrite minor0 ?mulr0 // (eqP Ar) (eqP sr).
+move=> Bs neq_Bs; have: B :\: s != set0.
+  apply: contra_neq neq_Bs=> /eqP; rewrite setD_eq0.
+  by move=> /subset_leqif_cards; rewrite Bs => /leqif_refl /eqP.
+have size_eeB: size (exterior_enum B) = r by rewrite size_sort -cardE Bs (eqP sr).
+move=> /set0Pn [k]; rewrite inE => /andP [kNs kB]; rewrite /minor.
+set k' := index k (exterior_enum B).
+have k'lt : (k' < r)%N by rewrite -size_eeB index_mem mem_sort mem_enum kB.
+rewrite (expand_det_col _ (Ordinal k'lt)) big1 // => i _.
+rewrite !mxE (nth_map 0) ?size_ees // mxE eqxx /=.
+rewrite nth_index ?mem_sort ?mem_enum //.
+have [k_eq|] := altP eqP; last by rewrite mul0r.
+have: {subset exterior_enum s <= s} by move=> ?; rewrite mem_sort mem_enum.
+by move=> /(_ k); rewrite (negPf kNs) k_eq mem_nth ?size_ees // => /(_ isT).
+Qed.
 
 
 Lemma mul_ext_form2 r s (f : r.-form[F ^ n']) (g : s.-form[F ^ n']) :
