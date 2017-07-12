@@ -1776,6 +1776,16 @@ rewrite mulr1 big1; first by rewrite addr0 -mul_scalar_mx -mx11_scalar.
 by move=> B /andP[_ neqBA]; rewrite mxE big_ord1 blade_diff 1?eq_sym ?mulr0.
 Qed.
 
+
+(** This lemma is true and easy to prove. It is also needed to prove the end of isomorphism,
+    but there is somehow a type issue here. I should ask Cyril. Sorry if you see that through git *)
+
+(* Lemma extn_prod r s (u v : (@exterior F n')) :  *)
+(* (u <= extn r)%MS -> (v <= extn s)%MS -> ( (u * v) <= extn (r+s))%MS. *)
+(* Proof. *)
+(* Admitted. *)
+
+
 (* Notation "'Λ_r" := (extn r) (only parsing): type_scope. *)
 Lemma dim_extn r : \rank (extn r) = 'C(n, r).
 Proof.
@@ -1860,6 +1870,7 @@ Lemma mul_ext_form2 r s (f : r.-form[F ^ n']) (g : s.-form[F ^ n']) :
 Proof.
 rewrite /mul_form2.
 rewrite form_of_extK2 //.
+apply /extnP. 
 Admitted.
 
 
