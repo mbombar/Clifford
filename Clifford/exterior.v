@@ -661,48 +661,48 @@ About uniq.
 
 (* (** useful for non commutative product *) *)
 (* Definition sign2 (A B : {set 'I_n}) : F := *)
-(*   delta F (sorted_enum A ++ sorted_enum B) (sorted_enum (A :|: B)). *)
+(*   delta F (enum A ++ enum B) (enum (A :|: B)). *)
 
 
 
 (* Lemma sign20S1 (S : {set 'I_n}) : sign2 set0 S = 1. *)
 (* Proof. *)
-(* rewrite /sign2 set0U sorted_enum_set0 cat0s. *)
-(* by rewrite deltaii ?sorted_enum_uniq. *)
+(* rewrite /sign2 set0U enum_set0 cat0s. *)
+(* by rewrite deltaii ?enum_uniq. *)
 (* Qed. *)
 
 
 
 (* Lemma sign2S01 (S : {set 'I_n}) : sign2 S set0 = 1. *)
 (* Proof. *)
-(* rewrite /sign2 setU0 sorted_enum_set0 cats0. *)
-(* by rewrite deltaii ?sorted_enum_uniq. *)
+(* rewrite /sign2 setU0 enum_set0 cats0. *)
+(* by rewrite deltaii ?enum_uniq. *)
 (* Qed. *)
 
 
-(* (** Idea : ~~[disjoint A & B] = ~~ (uniq ( sorted_enum A ++ sorted_enum B ) ) *) *)
+(* (** Idea : ~~[disjoint A & B] = ~~ (uniq ( enum A ++ enum B ) ) *) *)
 
 
 
 (* Lemma disjoint_seq (A B : {set 'I_n}) : *)
-(*   [disjoint A & B] = [disjoint (sorted_enum A) & (sorted_enum B)]. *)
+(*   [disjoint A & B] = [disjoint (enum A) & (enum B)]. *)
 (* Proof. *)
 (* rewrite !disjoint_subset; apply/subsetP/subsetP => AB x; *)
 (* by have := AB x; rewrite !inE !mem_sort !mem_enum; apply. *)
 (* Qed. *)
 
 
-(* Lemma sorted_enum_disjoint (A B : {set 'I_n}) : *)
-(*     [disjoint A & B] = uniq ( sorted_enum A ++ sorted_enum B). *)
+(* Lemma enum_disjoint (A B : {set 'I_n}) : *)
+(*     [disjoint A & B] = uniq ( enum A ++ enum B). *)
 (* Proof. *)
-(* rewrite disjoint_sym cat_uniq !sorted_enum_uniq andbT //=. *)
+(* rewrite disjoint_sym cat_uniq !enum_uniq andbT //=. *)
 (* by rewrite disjoint_seq disjoint_has. Qed. *)
 
 
 
 (* Lemma sign2ND (A B : {set 'I_n}) : ~~ [disjoint A & B] -> sign2 A B = 0. *)
 (* Proof. *)
-(* rewrite sorted_enum_disjoint => ND. *)
+(* rewrite enum_disjoint => ND. *)
 (* by rewrite /sign2 delta_0 //= ND. *)
 (* Qed. *)
 
@@ -723,7 +723,7 @@ About uniq.
 (* Lemma sign_single (i j : 'I_n) : sign2 [set j] [set i] = - sign2 [set i] [set j]. *)
 (* Proof. *)
 (* have [->| neq_ij] := eqVneq i j; first by rewrite sign2ii oppr0. *)
-(* rewrite /sign2 /sorted_enum !enum_set1 setUC. *)
+(* rewrite /sign2 /enum !enum_set1 setUC. *)
 (* rewrite delta_catC. *)
 (* - by rewrite !size_sort muln1 expr1 mulN1r. *)
 (* - by rewrite sort_uniq enum_uniq. *)
@@ -753,7 +753,7 @@ Qed.
 
 (* Search _ (mem _ _ = mem ).
 Search _ "mem" "C".
-rewrite /sorted_enum //=.
+rewrite /enum //=.
 Search _ "mem" "sort".
 (* rewrite mem_sort. *)
 Admitted.
@@ -1493,13 +1493,13 @@ Notation "r .-form" := (form_of r)
 (*                     b (\matrix_(i < s) row (sigma (unsplit (inr i))) v). *)
 
 
-(*Definition sorted_enum (s : {set 'I_n}) : seq 'I_n :=
+(*Definition enum (s : {set 'I_n}) : seq 'I_n :=
   sort (fun i j : 'I_n => i <= j) (enum s).*)
 
-(* Definition size_sorted_enum r (s : {set 'I_n}) : #|s| = r -> size (sorted_enum s) == r. *)
+(* Definition size_enum r (s : {set 'I_n}) : #|s| = r -> size (enum s) == r. *)
 (* Proof. Admitted. *)
 
-(* Definition canon_tuple (s : {set 'I_n}) := Tuple (size_sorted_enum s). *)
+(* Definition canon_tuple (s : {set 'I_n}) := Tuple (size_enum s). *)
 
 Definition multilinear r (f : r.-form) :=
    forall (A B C : 'M_(r,n)) (i0 : 'I_r) (b c : F),
@@ -1513,6 +1513,7 @@ Definition alternate r (f : r.-form) :=
 Definition multilinear_alternate r (f : r.-form) :=
   multilinear f /\ alternate f.
 
+
 (** I wanted to say that two multilinear forms which take the same value
     on a basis are in fact equal. I don't use alternate because otherwise
     I need to go through permutations. Not sure about the formulation of this lemma. *)
@@ -1520,6 +1521,7 @@ Lemma multilinear_eq_basis r (f : r.-form) (g : r.-form) :
 multilinear f -> multilinear g ->
 (forall i j, f (delta_mx i j) = g (delta_mx i j)) -> f =1 g.
 Admitted.
+
 
 Section form_of1.
 
@@ -1530,7 +1532,7 @@ Definition form_of_ext r (u : exterior) : r.-form := fun v =>
 
 Definition ext_of_form r (f : r.-form) : exterior :=
   \sum_(s : {set 'I_n} | #|s| == r)
-   f (\matrix_(i < r) [seq 'e_i | i <- sorted_enum s]`_i) *: blade s.
+   f (\matrix_(i < r) [seq 'e_i | i <- enum s]`_i) *: blade s.
 
 
 Definition mul_form r s (a : r.-form) (b : s.-form) : (r + s).-form :=
@@ -1618,11 +1620,14 @@ Section form_of2.
 
 Definition form_of_ext2 r (u : exterior) : r.-form := fun v =>
    \sum_(s : {set 'I_n} | #|s| == r)
-      u 0 (enum_rank s) * (minor id (nth 0 (sorted_enum s)) v).
+      u 0 (enum_rank s) * (minor id (nth 0 (enum s)) v).
 
 
 Definition mul_form2 r s (a : r.-form) (b : s.-form) : (r + s).-form :=
   form_of_ext2 (ext_of_form a * ext_of_form b).
+
+Definition add_form2 r (a : r.-form) (b : r.-form) : r.-form :=
+  form_of_ext2 (ext_of_form a + ext_of_form b).
 
 
 End form_of2.
@@ -1670,6 +1675,8 @@ Qed.
 
 End null_form.
 
+(** Apply ext_of_form2 on basis elements, then there is the same determinant as 
+    form_of_extK. Just need multilinearity *)
 Lemma ext_of_formK2 r (f : r.-form) : multilinear_alternate f ->
   form_of_ext2 (ext_of_form f) =1 f.
 Proof.
@@ -1685,8 +1692,8 @@ Lemma rowK_sub  T (p' q' p q : nat) (M : 'M[T]_(p, q)) f g k:
 Proof. by apply /rowP=> j; rewrite !mxE. Qed.
 
 Lemma rowK_sub_hinc T (p : nat) (M : 'M[T]_(p, n)) k (S : {set 'I_n}) :
-  row k (\matrix_(i < p, j < n) M i (nth ord0 (sorted_enum S) j)) =
-  \row_j (M k (nth ord0 (sorted_enum S) j)).
+  row k (\matrix_(i < p, j < n) M i (nth ord0 (enum S) j)) =
+  \row_j (M k (nth ord0 (enum S) j)).
 Proof. by rewrite rowK_sub. Qed.
 
 Lemma row_scale (R : comRingType) (a : R) (p q : nat) (M : 'M[R]_(p,q)) i :
@@ -1707,7 +1714,7 @@ move/row'_eq=> vu; move/row'_eq=> wu.
 rewrite !big_distrr -big_split; apply: eq_bigr => s sR /=.
 rewrite (mulrCA b) (mulrCA c) -mulrDr; congr (_ * _).
 pose exterior_mat X : 'M[F]_(r, r) :=
-   submatrix id (fun j : 'I_r => nth ord0 (sorted_enum s) j) X.
+   submatrix id (fun j : 'I_r => nth ord0 (enum s) j) X.
 set A := exterior_mat U; set B := exterior_mat V; set C := exterior_mat W.
 (* set A := submatrix _ _ U; set B := submatrix _ _ V; set C := submatrix _ _ W. *)
 rewrite [LHS](@determinant_multilinear _ _ A B C i0 b c) //; do ?[
@@ -1722,7 +1729,7 @@ move=> A i1 i2 neq_i12 eqA12.
 rewrite /form_of_ext2.
 rewrite big1 //.
 move=> s sr.
-have min0 : minor id (fun j : 'I_r => (sorted_enum s)`_j) A = 0; last first.
+have min0 : minor id (fun j : 'I_r => (enum s)`_j) A = 0; last first.
   by rewrite min0 ?mulr0.
 rewrite /minor.
 rewrite (@determinant_alternate _ _ _ i1 i2) //.
@@ -1776,14 +1783,33 @@ rewrite mulr1 big1; first by rewrite addr0 -mul_scalar_mx -mx11_scalar.
 by move=> B /andP[_ neqBA]; rewrite mxE big_ord1 blade_diff 1?eq_sym ?mulr0.
 Qed.
 
+Lemma extn_mul r s (u v : (@exterior F n')) :
+  (u <= extn r)%MS -> (v <= extn s)%MS -> ((u * v)%R <= extn (r + s)%N)%MS.
+Proof.
+move => /extnP -> /extnP ->.
+rewrite mulr_suml summx_sub // => I Ir.
+rewrite mulr_sumr summx_sub // => J Js.
+rewrite -scalerAr -scalerAl !scalemx_sub // mul_blades.
+have [dIJ|/signND->] := boolP [disjoint I & J]; last by rewrite scale0r sub0mx.
+rewrite scalemx_sub // /extn.
+apply /extnP; rewrite (bigD1 (I :|: J)) /=; last first.
+  by rewrite -(eqP Ir) -(eqP Js) leq_card_setU. 
+rewrite blade_eq // scale1r big1 ?addr0 //.
+by move=> K /andP[_ KIJ]; rewrite blade_diff ?scale0r.
+Qed.
 
-(** This lemma is true and easy to prove. It is also needed to prove the end of isomorphism,
-    but there is somehow a type issue here. I should ask Cyril. Sorry if you see that through git *)
-
-(* Lemma extn_prod r s (u v : (@exterior F n')) :  *)
-(* (u <= extn r)%MS -> (v <= extn s)%MS -> ( (u * v) <= extn (r+s))%MS. *)
-(* Proof. *)
-(* Admitted. *)
+(** Stability by addition, already exists *)
+Lemma extn_add r (u v : (@exterior F n')) :
+  (u <= extn r)%MS -> (v <= extn r)%MS -> ((u + v)%R <= extn r)%MS.
+Proof.
+move=> /extnP -> /extnP ->.
+rewrite -big_split /=.
+apply /extnP; apply eq_bigr=> S Sr; rewrite summxE (bigD1 S) //= !mxE /=.
+rewrite big1; last first.
+ - move=> R /andP[_ neqRS]; rewrite !mxE /=.
+   by admit.
+admit.
+Admitted.
 
 
 (* Notation "'Λ_r" := (extn r) (only parsing): type_scope. *)
@@ -1826,6 +1852,20 @@ apply/eqP/eq_bigr => i _; rewrite (eq_bigr (fun=> 1%N)); last first.
 by rewrite sum1dep_card /= card_draws card_ord !exp1n !muln1.
 Qed.
 
+Lemma ext_of_form_extn r (f : r.-form[F ^ n']) : (ext_of_form f <= extn r)%MS.
+Proof.
+apply /extnP; rewrite /ext_of_form.
+apply : eq_bigr => S Sr. 
+rewrite !summxE (bigD1 S) ?mxE ?big1 ?addr0 //=; last first.
+  - by move=> K /andP[_  neqKS]; rewrite mxE blade_diff ?mulr0 // eq_sym.
+congr( _ *: _); rewrite addr0.
+Admitted.
+
+Hint Resolve ext_of_form_extn. 
+
+
+
+
 Lemma form_of_extK2 r (u : exterior F n') :  (* u = \sum_(s : {set 'I_n} | #|s| == r) u 0 (enum_rank s) *: (blade s) *)
 (u <= extn r)%MS
  -> ext_of_form (@form_of_ext2 F n' r u) = u.
@@ -1833,48 +1873,50 @@ Proof.
 move=> /extnP uinextr.
 rewrite /ext_of_form (* /form_of_ext2 *) [in RHS]uinextr.
 apply: eq_bigr=> s sr; congr ( _ *: _ ).
-have size_ees: size (sorted_enum s) = r by rewrite size_sort -cardE (eqP sr).
+have size_ees: size (enum s) = r by rewrite -cardE (eqP sr).
 rewrite /form_of_ext2.
 rewrite (bigD1 s) //=.
 rewrite big1 ?addr0.
-  have minor1 : minor id (fun j : 'I_r => nth ord0 (sorted_enum s) j)
-    (\matrix_i [seq 'e_i0 | i0 <- sorted_enum s]`_i : 'M[F]__) = 1; last first.
+  have minor1 : minor id (fun j : 'I_r => nth ord0 (enum s) j)
+    (\matrix_i [seq 'e_i0 | i0 <- enum s]`_i : 'M[F]__) = 1; last first.
     by rewrite minor1 mulr1.
   (* expand_det_(row || col) *)
   rewrite /minor [X in \det X](_ : _ = 1%:M) ?det1 //.
   apply/matrixP=> i j; rewrite !mxE (nth_map 0) ?size_ees // mxE eqxx /=.
-  by rewrite nth_uniq ?size_ees // 1?eq_sym // sort_uniq enum_uniq.
+  by rewrite nth_uniq ?size_ees // 1?eq_sym // enum_uniq.
 move=> A /andP [Ar A_neqs].
 have minor0 (B : {set _}) : #|B| = #|s| -> B != s ->
-  minor id (fun j : 'I_r => nth ord0 (sorted_enum B) j)
-    (\matrix_i [seq ('e_i0 : 'M[F]__) | i0 <- sorted_enum s]`_i) = 0; last first.
+  minor id (fun j : 'I_r => nth ord0 (enum B) j)
+    (\matrix_i [seq ('e_i0 : 'M[F]__) | i0 <- enum s]`_i) = 0; last first.
   by rewrite minor0 ?mulr0 // (eqP Ar) (eqP sr).
 move=> Bs neq_Bs; have: B :\: s != set0.
   apply: contra_neq neq_Bs=> /eqP; rewrite setD_eq0.
   by move=> /subset_leqif_cards; rewrite Bs => /leqif_refl /eqP.
-have size_eeB: size (sorted_enum B) = r by rewrite size_sort -cardE Bs (eqP sr).
+have size_eeB: size (enum B) = r by rewrite -cardE Bs (eqP sr).
 move=> /set0Pn [k]; rewrite inE => /andP [kNs kB]; rewrite /minor.
-set k' := index k (sorted_enum B).
-have k'lt : (k' < r)%N by rewrite -size_eeB index_mem mem_sort mem_enum kB.
+set k' := index k (enum B).
+have k'lt : (k' < r)%N by rewrite -size_eeB index_mem mem_enum kB.
 rewrite (expand_det_col _ (Ordinal k'lt)) big1 // => i _.
 rewrite !mxE (nth_map 0) ?size_ees // mxE eqxx /=.
 rewrite nth_index ?mem_sort ?mem_enum //.
 have [k_eq|] := altP eqP; last by rewrite mul0r.
-have: {subset sorted_enum s <= s} by move=> ?; rewrite mem_sort mem_enum.
+have: {subset enum s <= s} by move=> ?; rewrite mem_enum.
 by move=> /(_ k); rewrite (negPf kNs) k_eq mem_nth ?size_ees // => /(_ isT).
 Qed.
 
 
+(** morphism *)
 Lemma mul_ext_form2 r s (f : r.-form[F ^ n']) (g : s.-form[F ^ n']) :
   ext_of_form (mul_form2 f g) =1 (ext_of_form f) * (ext_of_form g).
 Proof.
-rewrite /mul_form2.
-rewrite form_of_extK2 //.
-apply /extnP. 
-Admitted.
+by rewrite /mul_form2 form_of_extK2 ?extn_mul.
+Qed.
 
-
-
+Lemma add_ext_form2 r (f : r.-form[F ^ n']) (g : r.-form[F ^ n']) :
+  ext_of_form (add_form2 f g) =1 (ext_of_form f) + (ext_of_form g).
+Proof.
+by rewrite /add_form2 form_of_extK2 ?extn_add.
+Qed.
 (* Definition split_form r (I : {set 'I_r}) (f : r.-form) *)
 (*            (v : 'M_(r - #|I|,n)) : #|I|.-form := fun u => *)
 (*   f (\matrix_k if k \in I then row k u else row k v). *)
