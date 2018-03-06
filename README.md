@@ -50,8 +50,8 @@ $ make install
 4. Final Step : 
 
 ```
-$ git clone https://gitlab.crans.org/bombar/Stage_L3.git
-$ cd Crans_Clifford
+$ git clone https://github.com/mbombar/Clifford.git
+$ cd Clifford/Clifford
 $ make
 $ make install
 ```
